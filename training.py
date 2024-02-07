@@ -3,17 +3,18 @@ import random
 import numpy as np
 import torch
 import torch.nn as nn
-from utils import seed_setting
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score, roc_auc_score
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from sklearn.metrics import confusion_matrix, roc_auc_score
 import torch.nn.functional as F
+from utils import seed_setting
 
 # from data_preparation import process
 from main import HGCN
 from GCN import GCN
 from GAT import GAT
 from G_transformer import GCNCT
+from DHGCN import DHGCN
 import joblib
 import pickle
 
@@ -91,7 +92,7 @@ def main_training_loop(model, data):
     def train(model, data, optimizer):
         model.train()
         optimizer.zero_grad()
-        out = model(data)
+        out = model(data.node_features, data.hg)
         # print("Output shape:", out.shape)
                
         # train_outputs = out[data.train_mask]
@@ -179,7 +180,8 @@ def main_training_loop(model, data):
 
 
 def final_train():
-    model, data = HGCN()
+    # model, data = HGCN()
+    model,data = DHGCN()
     # model,data = GAT()
     # model,data = GCN()
     # model,data = GCNCT()

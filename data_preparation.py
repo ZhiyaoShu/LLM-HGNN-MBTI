@@ -16,7 +16,7 @@ def load_data():
     df = pd.read_csv('updated_merge_new_df.csv')
 
     # Load embeddings
-    embeddings_df = pd.read_json("embedings/embeddings3.json")
+    embeddings_df = pd.read_json("embeddings3.json")
 
     return df, embeddings_df
 
@@ -163,13 +163,10 @@ def process():
 
     # print(len(data))
 
-    # print(f"node features:", node_features)
-    # print(f"edge index:", edge_index)
-
-    # print(f"node features:", node_features)
-    # print(f"edge index:", edge_index)
-    # print(node_features.shape)
-    # print(edge_index.shape)
+    print(f"node features:", node_features)
+    print(f"edge index:", edge_index)
+    print(node_features.shape)
+    print(edge_index.shape)
 
     with open('graph_data.pkl', 'wb') as f:
         pickle.dump(data, f)
