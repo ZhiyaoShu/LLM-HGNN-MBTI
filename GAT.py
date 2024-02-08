@@ -7,8 +7,6 @@ import pickle
 
 from data_preparation import process
 
-
-
 class GAT_Net(torch.nn.Module):
     def __init__(self, features, hidden, classes, heads=1):
         super(GAT_Net, self).__init__()

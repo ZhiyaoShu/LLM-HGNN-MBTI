@@ -8,11 +8,9 @@ from sklearn.metrics import confusion_matrix, roc_auc_score
 import torch.nn.functional as F
 from utils import seed_setting
 import torchmetrics
-from HGCN import HGCN
 from GCN import GCN
 from GAT import GAT
 from G_transformer import GCNCT
-from DHGCN import DHGCN
 import joblib
 import pickle
 import copy
@@ -50,7 +48,7 @@ def main_training_loop(model, data):
     def train(model, data, optimizer):
         model.train()
         optimizer.zero_grad()
-        out = model(data.node_features, data)
+        out = model(data)
 
         target = data.y[data.train_mask].squeeze()
         target = target.long()
@@ -64,7 +62,7 @@ def main_training_loop(model, data):
     def validate(model, data):
         model.eval()
         with torch.no_grad():
-            out = model(data.node_features, data)
+            out = model(data)
             target = data.y[data.val_mask].squeeze()
             target = target.long()
             val_loss = F.cross_entropy(out[data.val_mask], target)
@@ -72,16 +70,21 @@ def main_training_loop(model, data):
 
     def test(model, data):
         model.eval()
-        out = model(data.node_features, data.hg)
-        pred = out.argmax(dim=1) 
-        y_true = data.y[data.test_mask].cpu().numpy()
-        y_pred = pred[data.test_mask].cpu().numpy() 
-        targets = data.y[data.test_mask].cpu().numpy()
+        with torch.no_grad():
+            out = model(data)
+            pred = torch.softmax(out, dim=1)
+            
+        target = data.y[data.test_mask].squeeze()
+        target = target.long() 
+        y_true = target.cpu().numpy()
+        y_pred_probs = pred[data.test_mask].cpu().numpy()
+        y_pred = y_pred_probs.argmax(axis=1)
         y_true_flat = y_true.ravel()
         y_pred_flat = y_pred.ravel()
         
-        auroc = torchmetrics.AUROC(pos_label=1)
-        auc_score = auroc(pred, targets)
+        auroc = torchmetrics.AUROC(num_classes=17, task="multiclass")
+        auc_score = auroc(pred[data.test_mask], target)
+        auc_score = auroc.compute()
         print(f"AUC Score: {auc_score}")
         
         # Micro metrics
@@ -131,8 +134,8 @@ def main_training_loop(model, data):
 
 
 def final_train():
-    model,data = GAT()
-    # model,data = GCN()
+    # model,data = GAT()
+    model,data = GCN()
     # model,data = GCNCT()
     main_training_loop(model, data)
     
