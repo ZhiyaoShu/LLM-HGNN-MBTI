@@ -154,7 +154,7 @@ def main_training_loop(model, data):
     best_model_state = None
     
     # Train and print the best model
-    for epoch in range(1, 201):
+    for epoch in range(1, 501):
         train_loss = train(model, data, optimizer)
         val_loss = validate(model, data)
         scheduler.step(val_loss)
