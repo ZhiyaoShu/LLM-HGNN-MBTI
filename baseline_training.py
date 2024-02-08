@@ -1,5 +1,4 @@
 
-import random
 import numpy as np
 import torch
 import torch.nn as nn
@@ -8,9 +7,8 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from sklearn.metrics import confusion_matrix, roc_auc_score
 import torch.nn.functional as F
 from utils import seed_setting
-
-# from data_preparation import process
-from main import HGCN
+import torchmetrics
+from HGCN import HGCN
 from GCN import GCN
 from GAT import GAT
 from G_transformer import GCNCT
@@ -18,47 +16,6 @@ from DHGCN import DHGCN
 import joblib
 import pickle
 import copy
-
-# class EarlyStopping:
-#     """Early stops the training if validation loss doesn't improve after a given patience."""
-#     def __init__(self, patience=200, verbose=False, delta=0):
-#         """
-#         :param patience: How long to wait after last time validation loss improved.
-#         :param verbose: If True, prints a message for each validation loss improvement.
-#         :param delta: Minimum change in the monitored quantity to qualify as an improvement.
-#         """
-#         self.patience = patience
-#         self.verbose = verbose
-#         self.counter = 0
-#         self.best_score = None
-#         self.early_stop = False
-#         self.val_loss_min = np.Inf
-#         self.delta = delta
-
-#     def __call__(self, val_loss, model):
-#         score = -val_loss
-
-#         if self.best_score is None:
-#             self.best_score = score
-#             self.save_checkpoint(val_loss, model)
-#         elif score < self.best_score + self.delta:
-#             self.counter += 1
-#             if self.verbose:
-#                 print(f'EarlyStopping counter: {self.counter} out of {self.patience}')
-#             if self.counter >= self.patience:
-#                 self.early_stop = True
-#         else:
-#             self.best_score = score
-#             self.save_checkpoint(val_loss, model)
-#             self.counter = 0
-
-    # def save_checkpoint(self, val_loss, model):
-    #     """Saves model when validation loss decrease."""
-    #     if self.verbose:
-    #         print(f'Validation loss decreased ({self.val_loss_min:.6f} --> {val_loss:.6f}). Saving model...')
-    #     torch.save(model.state_dict(), 'checkpoint.pt')
-    #     self.val_loss_min = val_loss
-
 
 # Random guess
 def random_guess_baseline(y_true):
@@ -88,20 +45,15 @@ def main_training_loop(model, data):
     # print(f"criterion: {criterion}")
     optimizer = torch.optim.Adam(model.parameters(), lr=0.05, weight_decay=5e-4)  
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1) 
-    # scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5)
+
 
     def train(model, data, optimizer):
         model.train()
         optimizer.zero_grad()
-        out = model(data.node_features, data.hg)
-        # print("Output shape:", out.shape)
-               
-        # train_outputs = out[data.train_mask]
-        # print("Train outputs shape:", train_outputs.shape)
-        # Get target labels for the training set
+        out = model(data.node_features, data)
+
         target = data.y[data.train_mask].squeeze()
         target = target.long()
-        # print("Target shape:", target.shape)
                 
         loss = F.cross_entropy(out[data.train_mask], target)
         loss.backward()
@@ -112,7 +64,7 @@ def main_training_loop(model, data):
     def validate(model, data):
         model.eval()
         with torch.no_grad():
-            out = model(data.node_features, data.hg)
+            out = model(data.node_features, data)
             target = data.y[data.val_mask].squeeze()
             target = target.long()
             val_loss = F.cross_entropy(out[data.val_mask], target)
@@ -124,15 +76,13 @@ def main_training_loop(model, data):
         pred = out.argmax(dim=1) 
         y_true = data.y[data.test_mask].cpu().numpy()
         y_pred = pred[data.test_mask].cpu().numpy() 
-               
+        targets = data.y[data.test_mask].cpu().numpy()
         y_true_flat = y_true.ravel()
         y_pred_flat = y_pred.ravel()
         
-        # cm = confusion_matrix(y_true_flat, y_pred_flat)
-        # print("Confusion Matrix:\n", cm)
-        
-        # roc_auc = roc_auc_score(y_true_flat, y_pred_flat, multi_class="ovr")
-        # print(f'ROC-AUC Score: {roc_auc:.4f}')
+        auroc = torchmetrics.AUROC(pos_label=1)
+        auc_score = auroc(pred, targets)
+        print(f"AUC Score: {auc_score}")
         
         # Micro metrics
         micro_precision = precision_score(y_true_flat, y_pred_flat, average='micro')
@@ -181,15 +131,11 @@ def main_training_loop(model, data):
 
 
 def final_train():
-    # model, data = HGCN()
-    model,data = DHGCN()
-    # model,data = GAT()
+    model,data = GAT()
     # model,data = GCN()
     # model,data = GCNCT()
     main_training_loop(model, data)
-    # torch.save(model.state_dict(), 'HGCN.pth')
-    
     
 if __name__ == "__main__":  
     final_train()
-    
+ 
