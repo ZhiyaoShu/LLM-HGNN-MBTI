@@ -120,12 +120,12 @@ def main_training_loop(model, data):
         model.eval()
         with torch.no_grad():
             out = model(data.node_features, data.hg)
-            preds = torch.softmax(out, dim=1)
+            pred = torch.softmax(out, dim=1)
             
-        targets = data.y[data.test_mask].squeeze()
-        targets = targets.long() 
-        y_true = targets.cpu().numpy()
-        y_pred_probs = preds[data.test_mask].cpu().numpy()
+        target = data.y[data.test_mask].squeeze()
+        target = target.long() 
+        y_true = target.cpu().numpy()
+        y_pred_probs = pred[data.test_mask].cpu().numpy()
         y_pred = y_pred_probs.argmax(axis=1)
         y_true_flat = y_true.ravel()
         y_pred_flat = y_pred.ravel()
@@ -133,10 +133,10 @@ def main_training_loop(model, data):
         # cm = confusion_matrix(y_true_flat, y_pred_flat)
         # print("Confusion Matrix:\n", cm)
         
-        # auroc = torchmetrics.AUROC(num_classes=17, task="multiclass")
-        # auc_score = auroc(preds[data.test_mask], targets)
-        # auc_score = auroc.compute()
-        # print(f"AUC Score: {auc_score}")
+        auroc = torchmetrics.AUROC(num_classes=17, task="multiclass")
+        auc_score = auroc(pred[data.test_mask], target)
+        auc_score = auroc.compute()
+        print(f"AUC Score: {auc_score}")
         
         # Micro metrics
         micro_precision = precision_score(y_true_flat, y_pred_flat, average='micro')
