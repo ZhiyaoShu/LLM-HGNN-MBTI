@@ -149,8 +149,6 @@ def main_training_loop(model, data):
     
     best_val_loss = float('inf')
     # early_stopping = EarlyStopping(patience=10, verbose=True)
-    
-    best_val_loss = float('inf')
     best_model_state = None
     
     # Train and print the best model
