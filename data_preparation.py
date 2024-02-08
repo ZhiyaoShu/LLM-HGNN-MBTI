@@ -143,12 +143,12 @@ def process():
         combined_df, df)
     
     data = Data(x=node_features, edge_index=edge_index)
+    
+    data.y = y.float()
+    # data.y = torch.argmax(y, dim=1)
 
     # Generate masks
     train_mask, val_mask, test_mask = generate_masks(y)
-
-    data.y = y.float()
-    # data.y = torch.argmax(y, dim=1)
     
     # # Convert node_features to NumPy for efficiency
     # node_features_np = data.x.detach().numpy()

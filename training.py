@@ -111,7 +111,7 @@ def main_training_loop(model, data):
     def validate(model, data):
         model.eval()
         with torch.no_grad():
-            out = model(data)
+            out = model(data.node_features, data.hg)
             target = data.y[data.val_mask].squeeze()
             target = target.long()
             val_loss = F.cross_entropy(out[data.val_mask], target)
@@ -119,7 +119,7 @@ def main_training_loop(model, data):
 
     def test(model, data):
         model.eval()
-        out = model(data)
+        out = model(data.node_features, data.hg)
         pred = out.argmax(dim=1) 
         y_true = data.y[data.test_mask].cpu().numpy()
         y_pred = pred[data.test_mask].cpu().numpy() 
@@ -193,4 +193,94 @@ if __name__ == "__main__":
     final_train()
     
 
+class SimpleHypergraph:
+    def __init__(self, num_v, hyperedges):
+        self.num_v = num_v 
+        self.hyperedges = hyperedges
+        
+    def to_edge_list(self):
+        pass
+def Hypergraph(data, df):
+    num_v = data.x.shape[0]
+    edge_index = data.edge_index
+    user_to_index = {username: i for i,
+                     username in enumerate(df['Username'])}
+
+    group_hyperedges = []
+    group_to_hyperedge = {}
+    hyperedge_id = 0
+
+    for _, row in df.iterrows():
+        user = row['Username']
+        try:
+            # Convert string to list
+            groups = ast.literal_eval(row['Groups'])
+        except ValueError:
+            groups = []
+        for group in groups:
+            if group not in group_to_hyperedge:
+                group_to_hyperedge[group] = hyperedge_id
+                hyperedge_id += 1
+            group_hyperedges.append(
+                (group_to_hyperedge[group], user_to_index[user]))
+
+    # Convert group_hyperedges to a tensor
+    group_hyperedges_tensor = torch.tensor(
+        group_hyperedges, dtype=torch.long).t().contiguous()
+
+    print("Shape of group-edges:", group_hyperedges_tensor.shape)
+    print("Number of unique groups:", len(group_to_hyperedge))
+
+    # Clustering Nodes with K-means
+    k = 100
+    node_features = data.node_features
+    kmeans = KMeans(n_clusters=k, random_state=10).fit(
+        node_features.detach().numpy())
+    clusters = kmeans.labels_
+
+    # Map each node to its new hyperedge (cluster)
+    cluster_to_hyperedge = {i: hyperedge_id + i for i in range(k)}
+    k_hyperedges = [(cluster_to_hyperedge[label], node)
+                    for node, label in enumerate(clusters)]
+    k_hyperedges_tensor = torch.tensor(
+        k_hyperedges, dtype=torch.long).t().contiguous()
+
+    print("Shape of k_hyperedges:", k_hyperedges_tensor.shape)
+
+    # 2-hop hyperedge
+    assert edge_index.shape[0] == 2
+    group_hyperedges = []
+    group_to_hyperedge = {}
+    hyperedge_id = 0
+    edge_index_2, edge_mask, ID_node_mask = dropout_node(
+        edge_index, p=0.0, num_nodes=num_v)
+
+    adj = SparseTensor.from_edge_index(
+        edge_index_2, sparse_sizes=(num_v, num_v))
+    adj = adj + adj @ adj
+    row, col, _ = adj.coo()
+    edge_index_2hop = torch.stack([row, col], dim=0)
+    edge_index_2hop, _ = remove_self_loops(edge_index_2hop)
+
+    print("Shape of edge_index_2hop:", edge_index_2hop.shape)
+
+    group_hyperedges_tensor_shape = group_hyperedges_tensor.shape[1]
+    edge_index_2hop_shape = edge_index_2hop.shape[1]
     
+    all_hyperedges = group_hyperedges + k_hyperedges
+    
+    hyperedge_dict = {}
+    for hyperedge_id, node_id in all_hyperedges:
+        if hyperedge_id not in hyperedge_dict:
+            hyperedge_dict[hyperedge_id] = []
+        hyperedge_dict[hyperedge_id].append(node_id)
+
+    # Now, create a list of lists for hyperedges
+    hyperedge_list = list(hyperedge_dict.values())
+
+    # Create the Hypergraph object
+    hypergraph = SimpleHypergraph(hyperedges=hyperedge_list)
+    data.hg = hypergraph
+    num_v = data.x.shape[0]
+    
+    return data
