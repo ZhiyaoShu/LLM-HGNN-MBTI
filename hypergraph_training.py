@@ -1,20 +1,13 @@
 
 import numpy as np
 import torch
-import torch.nn as nn
-from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score, roc_auc_score
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 from torch.optim.lr_scheduler import ReduceLROnPlateau
-from sklearn.metrics import confusion_matrix, roc_auc_score
 import torch.nn.functional as F
 from utils import seed_setting
 import torchmetrics
-from HGCN import HGCN
-from GCN import GCN
-from GAT import GAT
-from G_transformer import GCNCT
 from DHGCN import DHGCN
-import joblib
-import pickle
+import torch.optim as optim
 import copy
 
 # class EarlyStopping:
@@ -85,8 +78,8 @@ def main_training_loop(model, data):
 
     # print(f"criterion: {criterion}")
     optimizer = torch.optim.Adam(model.parameters(), lr=0.05, weight_decay=5e-4)  
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1) 
-    # scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=5)
+    # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1) 
+    scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
 
     def train(model, data, optimizer):
         model.train()
@@ -177,12 +170,12 @@ def main_training_loop(model, data):
         #     break
         
     test_acc, test_precision, test_recall, test_f1, micro_precision, micro_recall, micro_f1 = test(model, data)
-    print(f'Test Metrics - Accuracy: {test_acc:.4f}, Precision (Macro): {test_precision:.4f}, Recall (Macro): {test_recall:.4f}, F1 Score (Macro): {test_f1:.4f}')
-    print(f'Micro Metrics - Precision: {micro_precision:.4f}, Recall: {micro_recall:.4f}, F1 Score: {micro_f1:.4f}')
+    print(f'Test Metrics - Accuracy: {test_acc:.4f}, F1 Score (Macro): {test_f1:.4f}')
+    print(f'Micro F1 Score: {micro_f1:.4f}')
 
     y_true = data.y[data.test_mask].cpu().numpy()
     rand_acc, rand_prec, rand_rec, rand_f1 = random_guess_baseline(y_true)
-    print(f'Random Guess - Accuracy: {rand_acc:.4f}, Precision: {rand_prec:.4f}, Recall: {rand_rec:.4f}, F1 Score: {rand_f1:.4f}')  
+    print(f'Random Guess - Accuracy: {rand_acc:.4f}')  
 
 def final_train():
     # model, data = HGCN()

@@ -5,22 +5,43 @@ import pickle
 from dhg.nn import HyperGCNConv
 from dhg.structure.graphs import Graph
 from dhg.structure.hypergraphs import Hypergraph
-from typing import Optional
 import numpy as np
 from torch_sparse import SparseTensor
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-import torch_geometric.transforms as T
 from data_preparation import load_data
 import ast
 from sklearn.cluster import KMeans
-from torch_geometric.utils import dropout_node, remove_self_loops
-from torch_geometric.data import Data
-import numpy as np
-from collections import defaultdict
-import pandas as pd
-import ast
-import pickle
-import random
+
+class AttentionHyperGCNConv(nn.Module):
+    def __init__(self, in_channels, out_channels, use_mediator=False, selfloops=False, drop_rate=0.5):
+        super(AttentionHyperGCNConv, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.use_mediator = use_mediator
+        self.selfloops = selfloops
+        self.dropout = nn.Dropout(drop_rate)
+        
+        self.weight = nn.Parameter(torch.Tensor(in_channels, out_channels))
+        self.attention = nn.Parameter(torch.Tensor(out_channels, 1))
+        
+        nn.init.kaiming_uniform_(self.weight, a=np.sqrt(5))
+        nn.init.xavier_normal_(self.attention)
+    
+    def forward(self, X):
+        # Apply linear transformation
+        H = torch.matmul(X, self.weight)
+        
+        # Compute attention scores
+        attention_scores = torch.matmul(torch.tanh(H), self.attention)
+        attention_weights = torch.softmax(attention_scores, dim=0)
+        
+        # Apply dropout to attention weights
+        attention_weights = self.dropout(attention_weights)
+        
+        # Update node features based on attention weights
+        X_updated = torch.matmul(attention_weights.transpose(0, 1), H)
+        
+        return X_updated
 
 class HyperGCN(nn.Module):
     r"""The HyperGCN model proposed in `HyperGCN: A New Method of Training Graph Convolutional Networks on Hypergraphs <https://papers.nips.cc/paper/2019/file/1efa39bcaec6f3900149160693694536-Paper.pdf>`_ paper (NeurIPS 2019).
@@ -33,7 +54,6 @@ class HyperGCN(nn.Module):
         ``fast`` (``bool``): If set to ``True``, the transformed graph structure will be computed once from the input hypergraph and vertex features, and cached for future use. Defaults to ``True``.
         ``drop_rate`` (``float``, optional): Dropout ratio. Defaults to 0.5.
     """
-
     def __init__(
         self,
         in_channels: int,
@@ -42,23 +62,21 @@ class HyperGCN(nn.Module):
         use_mediator: bool = False,
         use_bn: bool = False,
         fast: bool = True,
-        drop_rate: float = 0.5,
+        selfloops: bool = False,
+        drop_rate: float = 0.5,  # 保留这个参数用于配置Dropout层
     ) -> None:
-        super().__init__()
+        super(HyperGCN, self).__init__()
         self.fast = fast
         self.cached_g = None
         self.with_mediator = use_mediator
-        self.layers = nn.ModuleList()
-        self.layers.append(
-            HyperGCNConv(
-                in_channels, hid_channels, use_mediator, use_bn=use_bn, drop_rate=drop_rate,
-            )
-        )
-        self.layers.append(
-            HyperGCNConv(
-                hid_channels, num_classes, use_mediator, use_bn=use_bn, is_last=True
-            )
-        )
+        self.dropout = nn.Dropout(drop_rate)  # 定义一个Dropout层
+        
+        # 第一层：输入特征到隐藏层
+        self.layer1 = HyperGCNConv(in_channels, hid_channels, use_mediator, use_bn=use_bn)
+        # 注意力层：增强隐藏层特征
+        self.attention_layer = AttentionHyperGCNConv(hid_channels, hid_channels, use_mediator, selfloops, drop_rate)
+        # 第二层：隐藏层到输出类别
+        self.layer2 = HyperGCNConv(hid_channels, num_classes, use_mediator, use_bn=use_bn, is_last=True)
 
     def forward(self, X: torch.Tensor, hg: "dhg.Hypergraph") -> torch.Tensor:
         r"""The forward function.
@@ -67,19 +85,60 @@ class HyperGCN(nn.Module):
             ``X`` (``torch.Tensor``): Input vertex feature matrix. Size :math:`(N, C_{in})`.
             ``hg`` (``dhg.Hypergraph``): The hypergraph structure that contains :math
         """
-        if self.fast:
-            if self.cached_g is None:
-                self.cached_g = Graph.from_hypergraph_hypergcn(
-                    hg, X, self.with_mediator
-                )
-            for layer in self.layers:
-                X = layer(X, hg, self.cached_g)
-        else:
-            for layer in self.layers:
-                X = layer(X, hg)
+        # self.layers.append(
+        #     HyperGCNConv(
+        #         in_channels, hid_channels, use_mediator, use_bn=use_bn, drop_rate=drop_rate,
+        #     )
+        # )
+        # self.layers.append(
+        #     HyperGCNConv(
+        #         hid_channels, num_classes, use_mediator, use_bn=use_bn, is_last=True
+        #     )
+        # )
+        print("Entering forward method")
+        print("Feature matrix shape:", X.shape)
+        print("Number of vertices in hypergraph:", hg.num_v)
+        
+        if self.fast and self.cached_g is None:
+            print("Creating cached graph...")
+            self.cached_g = Graph.from_hypergraph_hypergcn(hg, X, self.with_mediator)
+            print("Cached graph created.")
+        
+        X = self.layer1(X, hg)
+        X = self.dropout(X)  # 应用Dropout
+        X = self.attention_layer(X)  # 注意：这里假设AttentionHyperGCNConv不直接处理超图结构
+        X = self.dropout(X)  # 再次应用Dropout
+        X = self.layer2(X, hg)
+        
+        print("Exiting forward method")
         return X
 
+def simple_test():
+    in_channels = 384 
+    num_classes = 17   
+    hid_channels = 300 
+    model = HyperGCN(
+        in_channels=in_channels,
+        hid_channels=hid_channels,
+        num_classes=num_classes,
+        use_mediator=True, 
+        use_bn=False,  
+        fast=True,
+    )
+    
+    test_input = torch.randn(10, 384)  # 现在特征矩阵的行数与超图中的顶点数量匹配
+    test_hypergraph = Hypergraph(num_v=10, e_list=[[0, 1], [2, 4]])
+    test_output = model(test_input, test_hypergraph) # 使用修正后的特征矩阵和超图
+    print("Test output:", test_output)
+
+if __name__ == "__main__":
+    simple_test()
+
+
 def add_hyperedges(data, df):
+    """
+    Dynamcially add hyperedges to the hypergraph based on node features and the dataframe.
+    """
     node_num = data.x.shape[0]
     edge_index = data.edge_index
     user_to_index = {username: i for i,
@@ -111,7 +170,7 @@ def add_hyperedges(data, df):
     # Clustering Nodes with K-means
     k = 100
     node_features = data.x.numpy()  # Assuming data.x is a PyTorch tensor.
-    kmeans = KMeans(n_clusters=100, random_state=5).fit(node_features)
+    kmeans = KMeans(n_clusters=k, random_state=5).fit(node_features)
     clusters = kmeans.labels_
 
     cluster_hyperedges = []
@@ -158,6 +217,17 @@ def add_hyperedges(data, df):
 
     return data
 
+def normalize_features(data):
+    """
+    Normalize the node features based on their distribution.
+    """
+    distribution = check_data_distribution(data)
+    scaler = StandardScaler() if distribution == 'normal' else MinMaxScaler()
+    data.x = torch.tensor(scaler.fit_transform(
+        data.x.numpy()), dtype=torch.float)
+    return data
+
+
 def check_data_distribution(data):
     """
     Check the distribution of the features in the data.
@@ -169,33 +239,61 @@ def check_data_distribution(data):
     stat, p = shapiro(sample)
     return 'normal' if p > 0.05 else 'non-normal'
 
-
-def normalize_features(data):
-    """
-    Normalize the node features based on their distribution.
-    """
-    distribution = check_data_distribution(data)
-    scaler = StandardScaler() if distribution == 'normal' else MinMaxScaler()
-    data.x = torch.tensor(scaler.fit_transform(
-        data.x.numpy()), dtype=torch.float)
-    return data
-
-def DHGCN():
-    df, _ = load_data()
-    data = pickle.load(open('edges_delete_file.pkl', 'rb'))
-    data = add_hyperedges(data, df)
-    data = normalize_features(data)
-    in_channels = data.node_features.shape[1]
-    model = HyperGCN(
-        use_mediator=True, 
-        hid_channels = 300,
-        in_channels=in_channels,
-        fast=True, 
-        num_classes = 17,
-        drop_rate=0.5)
-
-    return model, data
+def update_hypergraph_structure(data, new_hyperedges):
+    # 假设data.hg是当前的超图对象
+    # 将新的动态超边添加到超图中
+    for hyperedge_id, node_id in new_hyperedges:
+        if hyperedge_id not in data.hg.e_dict:
+            data.hg.e_dict[hyperedge_id] = []
+        data.hg.e_dict[hyperedge_id].append(node_id)
+    
+    # 更新超图的边列表和节点-边关系等
+    data.hg.update_e_list_and_incidence_matrix()
 
 
-if __name__ == "__main__":
-    DHGCN()
+def dynamic_hyperedges(data, model, num_clusters=100):
+    # 假设data.x是节点特征矩阵，model是您的HyperGCN模型
+    with torch.no_grad():
+        node_embeddings = model.get_node_embeddings(data.x)  # 获取节点嵌入
+
+    # 使用聚类算法（如K-Means）基于节点嵌入动态构建超边
+    kmeans = KMeans(n_clusters=num_clusters, random_state=5).fit(node_embeddings.numpy())
+    clusters = kmeans.labels_
+
+    dynamic_hyperedges = []
+    hyperedge_id = max(data.hg.e_dict.keys()) + 1  
+
+    for node_id, cluster_label in enumerate(clusters):
+        dynamic_hyperedges.append((hyperedge_id + cluster_label, node_id))
+    
+    # 更新超图结构
+    update_hypergraph_structure(data, dynamic_hyperedges)
+
+# def DHGCN():
+#     df, _ = load_data()
+#     data = pickle.load(open('edges_delete_file.pkl', 'rb'))
+#     data = add_hyperedges(data, df)
+#     data = normalize_features(data)
+#     in_channels = 384
+#     # in_channels = data.node_features.shape[0]
+#     num_classes = 17  
+#     hid_channels = 300 
+
+#     model = HyperGCN(
+#         in_channels=in_channels,
+#         hid_channels=hid_channels,
+#         num_classes=num_classes,
+#         use_mediator=True, 
+#         use_bn=False,  
+#         fast=True,
+#     )
+    
+#     # print("顶点数量:", df.shape[0])
+#     # print("特征矩阵的行数:", data.node_features.shape[0])
+
+#     return model, data
+
+
+# if __name__ == "__main__":
+#     DHGCN()
+
