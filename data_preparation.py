@@ -163,8 +163,8 @@ def process():
 
     # print(len(data))
 
-    print(f"node features:", node_features)
-    print(f"edge index:", edge_index)
+    print("node features:", node_features.shape)
+    print("edge index:", edge_index)
     print(node_features.shape)
     print(edge_index.shape)
 

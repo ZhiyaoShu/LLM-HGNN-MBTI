@@ -5,7 +5,6 @@ import numpy as np
 from torch_geometric.nn import GATConv
 import pickle
 
-from data_preparation import process
 
 class GAT_Net(torch.nn.Module):
     def __init__(self, features, hidden, classes, heads=1):
