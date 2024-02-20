@@ -9,6 +9,7 @@ import torchmetrics
 from DHGCN import DHGCN
 import torch.optim as optim
 import copy
+import tensorflow as tf
 
 # class EarlyStopping:
 #     """Early stops the training if validation loss doesn't improve after a given patience."""
@@ -85,6 +86,7 @@ def main_training_loop(model, data):
         model.train()
         optimizer.zero_grad()
         out = model(data.node_features, data.hg)
+
         # print("Output shape:", out.shape)
                
         # train_outputs = out[data.train_mask]
@@ -92,10 +94,25 @@ def main_training_loop(model, data):
         # Get target labels for the training set
         target = data.y[data.train_mask].squeeze()
         target = target.long()
+
         # print("Target shape:", target.shape)
                 
         loss = F.cross_entropy(out[data.train_mask], target)
+        # print(out[data.train_mask].shape) 
+        # print(f"Loss grad_fn: {loss.grad_fn}")
+        # print(f"Model output grad_fn: {out.grad_fn}")  
+        # print(target.dtype)
+        # print(out.isfinite().all())
+        # print(loss.item())
+        
         loss.backward()
+        # print(out[data.train_mask].shape) 
+        # print(f"Loss grad_fn: {loss.grad_fn}")
+        # print(f"Model output grad_fn: {out.grad_fn}")  
+        # print(target.dtype)
+        # print(out.isfinite().all())
+        # print(loss.item())
+        
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optimizer.step()
         return loss
@@ -178,8 +195,7 @@ def main_training_loop(model, data):
     print(f'Random Guess - Accuracy: {rand_acc:.4f}')  
 
 def final_train():
-    # model, data = HGCN()
-    model,data = DHGCN()
+    model, data = DHGCN()
     main_training_loop(model, data)
     # torch.save(model.state_dict(), 'HGCN.pth')
     

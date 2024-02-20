@@ -134,9 +134,9 @@ def main_training_loop(model, data):
 
 
 def final_train():
-    model,data = GAT()
+    # model,data = GAT()
     # model,data = GCN()
-    # model,data = GCNCT()
+    model,data = GCNCT()
     main_training_loop(model, data)
     
 if __name__ == "__main__":  
