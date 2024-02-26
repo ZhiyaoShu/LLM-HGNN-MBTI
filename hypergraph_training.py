@@ -4,7 +4,7 @@ import torch
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch.nn.functional as F
-from utils import seed_setting
+from utils import seed_setting, save_model
 import torchmetrics
 from DHGCN import DHGCN
 import torch.optim as optim
@@ -106,13 +106,6 @@ def main_training_loop(model, data):
         # print(loss.item())
         
         loss.backward()
-        # print(out[data.train_mask].shape) 
-        # print(f"Loss grad_fn: {loss.grad_fn}")
-        # print(f"Model output grad_fn: {out.grad_fn}")  
-        # print(target.dtype)
-        # print(out.isfinite().all())
-        # print(loss.item())
-        
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optimizer.step()
         return loss
@@ -178,7 +171,7 @@ def main_training_loop(model, data):
         print(f"Epoch: {epoch}, Train Loss: {train_loss:.4f}")
         if epoch%10 == 0:        
             print(f"Epoch: {epoch}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
-            
+
         # early_stopping(val_loss, model)
     if best_model_state:
         model.load_state_dict(best_model_state)
@@ -192,7 +185,18 @@ def main_training_loop(model, data):
 
     y_true = data.y[data.test_mask].cpu().numpy()
     rand_acc, rand_prec, rand_rec, rand_f1 = random_guess_baseline(y_true)
-    print(f'Random Guess - Accuracy: {rand_acc:.4f}')  
+    print(f'Random Guess - Accuracy: {rand_acc:.4f}') 
+    
+    checkpoint2 = {
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'epoch': epoch,
+            'loss': best_val_loss,
+            'accuracy': test_acc,
+            }
+    
+    torch.save(checkpoint2, 'model_checkpoint.pth2') 
+    
 
 def final_train():
     model, data = DHGCN()
