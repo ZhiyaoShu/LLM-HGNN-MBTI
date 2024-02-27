@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import torch
 import torchvision.models as models
 
-from HGCN import HGCN
+from archieve.HGCN import HGCN
 # data = process()
 # node_features = data.node_features
 

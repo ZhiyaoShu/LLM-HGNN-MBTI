@@ -107,7 +107,7 @@ def prepare_graph_tensors(combined_df, df):
     # Converting edges list to a tensor
     edge_index = torch.tensor(edges, dtype=torch.long).t().contiguous()
     
-    return node_features, edge_index
+    return node_features, edge_index, user_to_index
 
 # Create train, test, validate masks
 def generate_masks(y, split=(2, 1, 1)):
@@ -139,7 +139,7 @@ def process():
 
     # mask = torch.all(y_follow_encode == torch.tensor([-1, -1, -1, -1]), dim=1)
 
-    node_features, edge_index = prepare_graph_tensors(
+    node_features, edge_index, user_to_index = prepare_graph_tensors(
         combined_df, df)
     
     data = Data(x=node_features, edge_index=edge_index)
@@ -155,12 +155,13 @@ def process():
     
     data.edge_index = edge_index
     data.node_features = node_features
-
+    data.user_to_index = user_to_index
+    
     # Add to the data object
     data.train_mask = train_mask
     data.val_mask = val_mask
     data.test_mask = test_mask
-
+    data.groups = df['Groups'].tolist()
     # print(len(data))
 
     print("node features:", node_features.shape)

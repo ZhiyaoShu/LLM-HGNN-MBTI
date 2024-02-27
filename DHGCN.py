@@ -22,6 +22,7 @@ from typing import Optional
 from dhg.nn import HGNNPConv
 from dhg.nn import HNHNConv
 from dhg.nn import UniGCNConv, UniGATConv, UniSAGEConv, UniGINConv, MultiHeadWrapper
+from utils import normalize_features
 
 
 class AttentionHyperGCNConv(nn.Module):
@@ -194,263 +195,6 @@ class HyperGCN(nn.Module):
         return X
 
 
-class HGNNP(nn.Module):
-    r"""The HGNN :sup:`+` model proposed in `HGNN+: General Hypergraph Neural Networks <https://ieeexplore.ieee.org/document/9795251>`_ paper (IEEE T-PAMI 2022).
-
-    Args:
-        ``in_channels`` (``int``): :math:`C_{in}` is the number of input channels.
-        ``hid_channels`` (``int``): :math:`C_{hid}` is the number of hidden channels.
-        ``num_classes`` (``int``): The Number of class of the classification task.
-        ``use_bn`` (``bool``): If set to ``True``, use batch normalization. Defaults to ``False``.
-        ``drop_rate`` (``float``, optional): Dropout ratio. Defaults to ``0.5``.
-    """
-
-    def __init__(
-        self,
-        in_channels: int,
-        hid_channels: int,
-        num_classes: int,
-        use_bn: bool = False,
-        drop_rate: float = 0.5,
-        # use_skip_connections=False,
-    ) -> None:
-        super().__init__()
-        # self.use_skip_connections = use_skip_connections
-        self.layers = nn.ModuleList()
-        self.skip_layers = nn.ModuleList()
-        self.layers.append(
-            HGNNPConv(in_channels, hid_channels, use_bn=use_bn, drop_rate=drop_rate)
-        )
-        # # add a linear layer to match the dimensions
-        # if self.use_skip_connections:
-        #     self.skip_layers.append(nn.Linear(in_channels, hid_channels))
-
-        self.layers.append(
-            HGNNPConv(hid_channels, num_classes, use_bn=use_bn, is_last=True)
-        )
-        # # add a linear layer to match the dimensions
-        # if self.use_skip_connections and in_channels != num_classes:
-        #     self.skip_layers.append(nn.Linear(hid_channels, num_classes))
-
-    def forward(self, X: torch.Tensor, hg: "dhg.Hypergraph") -> torch.Tensor:
-        r"""The forward function.
-
-        Args:
-            ``X`` (``torch.Tensor``): Input vertex feature matrix. Size :math:`(N, C_{in})`.
-            ``hg`` (``dhg.Hypergraph``): The hypergraph structure that contains :math:`N` vertices.
-        """
-        for layer in self.layers:
-            X = layer(X, hg)
-        return X
-
-
-class HNHN(nn.Module):
-    r"""The HNHN model proposed in `HNHN: Hypergraph Networks with Hyperedge Neurons <https://arxiv.org/pdf/2006.12278.pdf>`_ paper (ICML 2020).
-
-    Args:
-        ``in_channels`` (``int``): :math:`C_{in}` is the number of input channels.
-        ``hid_channels`` (``int``): :math:`C_{hid}` is the number of hidden channels.
-        ``num_classes`` (``int``): The Number of class of the classification task.
-        ``use_bn`` (``bool``): If set to ``True``, use batch normalization. Defaults to ``False``.
-        ``drop_rate`` (``float``, optional): Dropout ratio. Defaults to ``0.5``.
-    """
-
-    def __init__(
-        self,
-        in_channels: int,
-        hid_channels: int,
-        num_classes: int,
-        use_bn: bool = False,
-        drop_rate: float = 0.5,
-    ) -> None:
-        super().__init__()
-        self.layers = nn.ModuleList()
-        self.layers.append(
-            HNHNConv(in_channels, hid_channels, use_bn=use_bn, drop_rate=drop_rate)
-        )
-        self.layers.append(
-            HNHNConv(hid_channels, num_classes, use_bn=use_bn, is_last=True)
-        )
-
-    def forward(self, X: torch.Tensor, hg: "dhg.Hypergraph") -> torch.Tensor:
-        r"""The forward function.
-
-        Args:
-            ``X`` (``torch.Tensor``): Input vertex feature matrix. Size :math:`(N, C_{in})`.
-            ``hg`` (``dhg.Hypergraph``): The hypergraph structure that contains :math:`N` vertices.
-        """
-        for layer in self.layers:
-            X = layer(X, hg)
-        return X
-
-
-class UniGAT(nn.Module):
-    r"""The UniGAT model proposed in `UniGNN: a Unified Framework for Graph and Hypergraph Neural Networks <https://arxiv.org/pdf/2105.00956.pdf>`_ paper (IJCAI 2021).
-
-    Args:
-        ``in_channels`` (``int``): :math:`C_{in}` is the number of input channels.
-        ``hid_channels`` (``int``): :math:`C_{hid}` is the number of hidden channels.
-        ``num_classes`` (``int``): The Number of class of the classification task.
-        ``num_heads`` (``int``): The Number of attention head in each layer.
-        ``use_bn`` (``bool``): If set to ``True``, use batch normalization. Defaults to ``False``.
-        ``drop_rate`` (``float``): The dropout probability. Defaults to ``0.5``.
-        ``atten_neg_slope`` (``float``): Hyper-parameter of the ``LeakyReLU`` activation of edge attention. Defaults to 0.2.
-    """
-
-    def __init__(
-        self,
-        in_channels: int,
-        hid_channels: int,
-        num_classes: int,
-        num_heads: int,
-        use_bn: bool = False,
-        drop_rate: float = 0.5,
-        atten_neg_slope: float = 0.2,
-    ) -> None:
-        super().__init__()
-        self.drop_layer = nn.Dropout(drop_rate)
-        self.multi_head_layer = MultiHeadWrapper(
-            num_heads,
-            "concat",
-            UniGATConv,
-            in_channels=in_channels,
-            out_channels=hid_channels,
-            use_bn=use_bn,
-            drop_rate=drop_rate,
-            atten_neg_slope=atten_neg_slope,
-        )
-        # The original implementation has applied activation layer after the final layer.
-        # Thus, we donot set ``is_last`` to ``True``.
-        self.out_layer = UniGATConv(
-            hid_channels * num_heads,
-            num_classes,
-            use_bn=use_bn,
-            drop_rate=drop_rate,
-            atten_neg_slope=atten_neg_slope,
-            is_last=False,
-        )
-
-    def forward(self, X: torch.Tensor, hg: "dhg.Hypergraph") -> torch.Tensor:
-        r"""The forward function.
-
-        Args:
-            ``X`` (``torch.Tensor``): Input vertex feature matrix. Size :math:`(N, C_{in})`.
-            ``hg`` (``dhg.Hypergraph``): The hypergraph structure that contains :math:`N` vertices.
-        """
-        X = self.drop_layer(X)
-        X = self.multi_head_layer(X=X, hg=hg)
-        X = self.drop_layer(X)
-        X = self.out_layer(X, hg)
-        return X
-
-
-# Hyperedges implementation
-def get_hyperedges(data, df):
-    """
-    Dynamcially add hyperedges to the hypergraph based on node features and the dataframe.
-    """
-    node_num = data.x.shape[0]
-    edge_index = data.edge_index
-    user_to_index = {username: i for i, username in enumerate(df["Username"])}
-
-    group_hyperedges = []
-    group_to_hyperedge = {}
-    hyperedge_id = 0
-
-    for _, row in df.iterrows():
-        user = row["Username"]
-        try:
-            groups = ast.literal_eval(row["Groups"])
-        except ValueError:
-            groups = []
-        for group in groups:
-            if group not in group_to_hyperedge:
-                group_to_hyperedge[group] = hyperedge_id
-                hyperedge_id += 1
-            group_hyperedges.append((group_to_hyperedge[group], user_to_index[user]))
-
-    # # Convert group_hyperedges to a tensor
-    # group_hyperedges_tensor = (
-    #     torch.tensor(group_hyperedges, dtype=torch.long).t().contiguous()
-    # )
-
-    # print("Shape of group-edges:", group_hyperedges_tensor.shape)
-
-    # Clustering Nodes with K-means
-    k = 100
-    node_features = data.x.numpy()  # Assuming data.x is a PyTorch tensor.
-    kmeans = KMeans(n_clusters=k, random_state=5).fit(node_features)
-    clusters = kmeans.labels_
-
-    cluster_hyperedges = []
-    for node, label in enumerate(clusters):
-        cluster_hyperedges.append((hyperedge_id + label, node))
-    hyperedge_id += k
-
-    # 2-hop hyperedge
-    adj = SparseTensor.from_edge_index(edge_index, sparse_sizes=(node_num, node_num))
-    adj_sq = adj @ adj
-    row, col, _ = adj_sq.coo()
-    two_hop_hyperedges = []
-    for idx in range(row.size(0)):
-        if row[idx] != col[idx]:  # Removing self loops
-            two_hop_hyperedges.append((hyperedge_id, row[idx].item()))
-            two_hop_hyperedges.append((hyperedge_id, col[idx].item()))
-        hyperedge_id += 1
-
-    # Combine all hyperedges
-    all_hyperedges = group_hyperedges + cluster_hyperedges + two_hop_hyperedges
-    hyperedge_dict = {}
-    for hyperedge_id, node_id in all_hyperedges:
-        if hyperedge_id not in hyperedge_dict:
-            hyperedge_dict[hyperedge_id] = []
-        hyperedge_dict[hyperedge_id].append(node_id)
-
-    hyperedge_list = list(hyperedge_dict.values())
-
-    # print("Number of hyperedges:", len(hyperedge_list))
-
-    valid_hyperedges = [he for he in hyperedge_list if len(he) >= 2]
-    if len(valid_hyperedges) != len(hyperedge_list):
-        print(
-            f"Warning: Removed {len(hyperedge_list) - len(valid_hyperedges)} hyperedges with fewer than 2 vertices."
-        )
-    hyperedge_list = valid_hyperedges
-
-    # print("Number of hyperedges after validation:", len(hyperedge_list))
-
-    # Create the Hypergraph object
-    hypergraph = Hypergraph(num_v=node_num, e_list=hyperedge_list)
-    data.hg = hypergraph
-    data.e = hyperedge_list
-    # print("Type of variable expected to be list:", type(hyperedge_list))
-    data.num_v = node_num
-
-    return data
-
-
-def check_data_distribution(data):
-    """
-    Check the distribution of the features in the data.
-    """
-    from scipy.stats import shapiro
-
-    sample = data.x[np.random.choice(data.x.size(0), 1000, replace=False)].numpy()
-
-    stat, p = shapiro(sample)
-    return "normal" if p > 0.05 else "non-normal"
-
-
-def normalize_features(data):
-    """
-    Normalize the node features based on their distribution.
-    """
-    distribution = check_data_distribution(data)
-    scaler = StandardScaler() if distribution == "normal" else MinMaxScaler()
-    data.x = torch.tensor(scaler.fit_transform(data.x.numpy()), dtype=torch.float)
-    return data
-
-
 def DHGCN():
     df, _ = load_data()
     data = pickle.load(open("edges_delete_file.pkl", "rb"))
@@ -463,54 +207,21 @@ def DHGCN():
 
     print("Before processing: ", data.num_v, "node numbers", len(data.e), "hyperedges.")
 
-    # model = HyperGCN(
-    #     in_channels=in_channels,
-    #     hid_channels=hid_channels,
-    #     num_classes=num_classes,
-    #     use_mediator=False,
-    #     use_bn=True,
-    #     fast=True,
-    # )
-
-    model = HGNNP(
+    model = HyperGCN(
         in_channels=in_channels,
         hid_channels=hid_channels,
         num_classes=num_classes,
+        use_mediator=False,
         use_bn=True,
+        fast=True,
     )
-
-    # model = HNHN(
-    #     in_channels=in_channels,
-    #     hid_channels=hid_channels,
-    #     num_classes=num_classes,
-    #     use_bn=True,
-    # )
-
-    # model = UniGAT(
-    #     in_channels=in_channels,
-    #     hid_channels=hid_channels,
-    #     num_classes=num_classes,
-    #     num_heads=1,
-    #     use_bn=True,
-    #     drop_rate=0.5,
-    #     atten_neg_slope=0.2,
-    # )
-
-    # for name, param in model.named_parameters():
-    #     if not param.requires_grad:
-    #         print(f"Parameter {name} does not require gradients.")
-    #     else:
-    #         print(f"Parameter {name} requires gradients.")
-
-    # model_path = 'hypergcn_model_state_dict.pth'
-    # torch.save(model.state_dict(), model_path)
 
     return model, data
 
 
 if __name__ == "__main__":
     DHGCN()
-    # test_hypergcn_model()
+
 
 # def update_hypergraph_structure(data, new_hyperedges):
 #     # update the hypergraph structure
