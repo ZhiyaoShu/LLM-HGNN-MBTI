@@ -8,10 +8,10 @@ from dhg.structure.hypergraphs import Hypergraph
 import numpy as np
 from torch_sparse import SparseTensor
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from data_preparation import load_data
 import ast
 from sklearn.cluster import KMeans
 from torch import nn, optim
+from data_preparation import load_data
 
 
 # Define the self loop removal function
@@ -19,8 +19,9 @@ def remove_self_loops(edge_index: torch.Tensor) -> torch.Tensor:
     mask = edge_index[0] != edge_index[1]
     return edge_index[:, mask]
 
+device = torch.device("cuda" if torch.cuda else "cpu")
 
-def get_dhg_hyperedges(data):
+def get_dhg_hyperedges(data, df):
     # Define the hyperedges based on data
     edge_index = data.edge_index
     edge_index_no_self_loops = remove_self_loops(edge_index)
@@ -41,29 +42,42 @@ def get_dhg_hyperedges(data):
     hg.add_hyperedges_from_feature_kNN(data.x, k, group_name="feature_kNN")
 
     # Group-based hyperedges
-    groups = data.groups
-    
-    group_to_nodes = {}  # Maps each group to a list of node indices
-    for user, index in data.user_to_index.items():
-        # Retrieve the groups for the current user
-        for group in groups:
-            if group not in group_to_nodes:
-                group_to_nodes[group] = []
-            group_to_nodes[group].append(index)
-            
-    for nodes in group_to_nodes.values():
-        if len(nodes) > 1:
-            hg.add_hyperedges(nodes, group_name="group")
-    # Assign the constructed hypergraph back to the data object
-    data.hg = hg
+    user_to_index = {username: i for i, username in enumerate(df["Username"])}
 
+    # Initialize group to hyperedges mapping
+    group_to_hyperedge = {
+        group: idx + hg.num_e
+        for idx, group in enumerate(set(sum([ast.literal_eval(row["Groups"]) for _, row in df.iterrows() if row["Groups"]], [])))
+    }
+    
+    # Initialize a dictionary to hold nodes for each group
+    group_nodes = {group_id: [] for group_id in group_to_hyperedge.values()}
+    
+    for _, row in df.iterrows():
+        user = row["Username"]
+        try:
+            groups = ast.literal_eval(row["Groups"])
+        except ValueError:
+            continue  # Skip if groups cannot be parsed
+        user_index = user_to_index[user]
+        for group in groups:
+            group_id = group_to_hyperedge[group]
+            group_nodes[group_id].append(user_index)
+    
+    # Add each group's hyperedge with its nodes
+    for group_id, nodes in group_nodes.items():
+        hg.add_hyperedges(nodes, group_name=group_id)  
+
+    data.hg = hg
     return data
 
+
 # data = pickle.load(open("edges_delete_file.pkl", "rb"))
-# get_dhg_hyperedges(data)
+# df, _ = load_data()
+# get_dhg_hyperedges(data, df)
 # user_to_index = data.user_to_index
-# user_to_index_items = list(user_to_index.items())  
-# for user, index in user_to_index_items[:10]:  # Slice the first 10 items for iteration
+# user_to_index_items = list(user_to_index.items())
+# for user, index in user_to_index_items[:10]: 
 #     print(f"{user}: {index}")
 
 
@@ -91,6 +105,13 @@ def custom_hyperedges(data, df):
                 group_to_hyperedge[group] = hyperedge_id
                 hyperedge_id += 1
             group_hyperedges.append((group_to_hyperedge[group], user_to_index[user]))
+
+    # # Convert group_hyperedges to a tensor
+    # group_hyperedges_tensor = (
+    #     torch.tensor(group_hyperedges, dtype=torch.long).t().contiguous()
+    # )
+
+    # print("Shape of group-edges:", group_hyperedges_tensor.shape)
 
     # Clustering Nodes with K-means
     k = 100
@@ -133,14 +154,32 @@ def custom_hyperedges(data, df):
         )
     hyperedge_list = valid_hyperedges
 
-    # print("Number of hyperedges after validation:", len(hyperedge_list))
+    print("Number of hyperedges after validation:", len(hyperedge_list))
 
     # Create the Hypergraph object
-
     hypergraph = Hypergraph(num_v=node_num, e_list=hyperedge_list)
+
     data.hg = hypergraph
     data.e = hyperedge_list
-    # print("Type of variable expected to be list:", type(hyperedge_list))
+    print("Type of variable expected to be list:", type(hyperedge_list))
+    print("Number of hyperedges:", len(data.e))
     data.num_v = node_num
 
     return data
+
+    # groups = data.groups
+
+    # group_to_nodes = {}  # Maps each group to a list of node indices
+    # for user, index in data.user_to_index.items():
+    #     # Retrieve the groups for the current user
+    #     for group in groups:
+    #         if group not in group_to_nodes:
+    #             group_to_nodes[group] = []
+    #         group_to_nodes[group].append(index)
+
+    # for nodes in group_to_nodes.values():
+    #     if len(nodes) > 1:
+    #         hg.add_hyperedges(nodes, group_name="group")
+
+    # # Assign the constructed hypergraph back to the data object
+    # data.hg = hg

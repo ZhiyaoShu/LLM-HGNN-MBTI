@@ -23,6 +23,7 @@ from dhg.nn import HGNNPConv
 from dhg.nn import HNHNConv
 from dhg.nn import UniGCNConv, UniGATConv, UniSAGEConv, UniGINConv, MultiHeadWrapper
 from utils import normalize_features
+from Hypergraph import get_dhg_hyperedges, custom_hyperedges
 
 
 class AttentionHyperGCNConv(nn.Module):
@@ -198,7 +199,7 @@ class HyperGCN(nn.Module):
 def DHGCN():
     df, _ = load_data()
     data = pickle.load(open("edges_delete_file.pkl", "rb"))
-    data = get_hyperedges(data, df)
+    data = get_dhg_hyperedges(data, df)
     data = normalize_features(data)
     # in_channels = data.x.shape[1]
     in_channels = 384

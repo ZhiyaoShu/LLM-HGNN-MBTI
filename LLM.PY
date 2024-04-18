@@ -9,7 +9,7 @@ import tiktoken
 load_dotenv()
 
 client_openai = OpenAI(api_key=os.getenv("OPENAI_API_KEY"), organization='org-jsgHg8MvybstZJ77cXglbMBi')
-user_df = pd.read_csv('updated_merge_new_df.csv')
+user_df = pd.read_csv('data/updated_merge_new_df.csv')
 
 MODEL_NAME = "gpt-4-turbo-preview"
 MODEL_NAME_BACKUP = "gpt-3.5-turbo-0125"
@@ -107,7 +107,8 @@ try:
         json.dump(embeddings, json_file, indent=4)
 except Exception as e:
     print("Error:", e)
-    
+
+  
 
 # try:
 #     user_df = pd.read_csv('dataset/updated_merge_new_df.csv')

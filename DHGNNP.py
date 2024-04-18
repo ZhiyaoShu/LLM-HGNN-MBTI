@@ -6,9 +6,14 @@ from dhg.nn import HGNNPConv
 from torch.nn import Linear, LayerNorm, ReLU, Sequential
 from utils import normalize_features
 from data_preparation import load_data
-from Hypergraph import get_dhg_hyperedges
+from Hypergraph import get_dhg_hyperedges, custom_hyperedges
+from archieve.DHNNs import DeeperHNN
 from torch_geometric.nn import DeepGCNLayer
+
+# from torch_geometric.nn import DeepGCNLayer
 import pickle
+import torch.nn.functional as F
+# device = torch.device("cuda" if torch.cuda else "cpu")
 
 
 class DeepHGNNP(nn.Module):
@@ -24,36 +29,30 @@ class DeepHGNNP(nn.Module):
         self,
         in_channels: int,
         hid_channels: int,
-        num_classes: int,
+        out_channels: int,
         use_bn: bool = False,
         drop_rate: float = 0.5,
         # use_skip_connections=False,
     ) -> None:
         super(DeepHGNNP, self).__init__()
+        
+        self.node_encoder = Linear(in_channels, hid_channels)
         self.layers = nn.ModuleList()
-
         # Initial hypergraph convolution layer
-        self.layers.append(
-            HGNNPConv(in_channels, hid_channels, use_bn=use_bn, drop_rate=drop_rate)
-        )
-        self.layers.append(
-            DeepGCNLayer(
-                HGNNPConv(
-                    hid_channels, hid_channels, use_bn=use_bn, drop_rate=drop_rate
-                ),
-                block="res+",
-                dropout=drop_rate,
-                ckpt_grad=False,
+        for i in range(1, out_channels + 1):
+            conv = HGNNPConv(
+                hid_channels, hid_channels, use_bn=use_bn, drop_rate=drop_rate
             )
-        )
 
-        self.layers.append(
-            HGNNPConv(hid_channels, num_classes, use_bn=use_bn, drop_rate=drop_rate)
-        )
+            self.norm = LayerNorm(hid_channels, elementwise_affine=True)
 
-        # # add a linear layer to match the dimensions
-        # if self.use_skip_connections and in_channels != num_classes:
-        #     self.skip_layers.append(nn.Linear(hid_channels, num_classes))
+            self.act = ReLU(inplace=True)
+
+            deepgcn_layer = DeepGCNLayer(conv=conv, act=self.act, block="res+", norm=self.norm, dropout=drop_rate, ckpt_grad=i % 3)
+            
+            self.layers.append(deepgcn_layer)
+
+        self.lin = Linear(hid_channels, out_channels)
 
     def forward(self, X: torch.Tensor, hg: "dhg.Hypergraph") -> torch.Tensor:
         r"""The forward function.
@@ -62,32 +61,39 @@ class DeepHGNNP(nn.Module):
             ``X`` (``torch.Tensor``): Input vertex feature matrix. Size :math:`(N, C_{in})`.
             ``hg`` (``dhg.Hypergraph``): The hypergraph structure that contains :math:`N` vertices.
         """
+        # print(f"Initial shape: {X.shape}")
+        X = self.node_encoder(X)
+        # print(f"After node_encoder: {X.shape}")
         for layer in self.layers:
             X = layer(X, hg)
-        return X
+            # print(f"After layer: {X.shape}")
+        return F.log_softmax(self.lin(X), dim=1)
 
-def save_hyperedges(hypergraph, filename='hypergraph.pkl'):
-    with open(filename, 'wb') as f:
-        pickle.dump(hypergraph, f)
 
-def save_model(model, filename='model.pth'):
-    torch.save(model.state_dict(), filename)
-        
+# def save_hyperedges(hypergraph, filename="hypergraph.pkl"):
+#     with open(filename, "wb") as f:
+#         pickle.dump(hypergraph, f)
+
+
+# def save_model(model, filename="model.pth"):
+#     torch.save(model.state_dict(), filename)
+
+
 def DHGNNP():
-    # data = pickle.load(open("edges_delete_file.pkl", "rb"))
-    # data = get_dhg_hyperedges(data)
-    # data = normalize_features(data)
+    data = pickle.load(open("graph_with_embedding2.pkl", "rb"))
+    # data = pickle.load(open('baseline_delete_edge_file.pkl', 'rb'))
+    df, _ = load_data()
+    data = get_dhg_hyperedges(data, df)
+    data = normalize_features(data)
+
     model = DeepHGNNP(
-        in_channels=384,
-        hid_channels=384,
-        num_classes=17,
+        in_channels=data.x.shape[1],
+        hid_channels=300,
+        out_channels=17,
         use_bn=True,
     )
-    
-    # save_hyperedges(data.hg, 'hypergraph.pkl')
-    # save_model(model, 'deep_hgnnp_model.pth')
-    
-    return model
+
+    return model, data
 
 
 if __name__ == "__main__":
