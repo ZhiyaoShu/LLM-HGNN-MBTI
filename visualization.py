@@ -7,44 +7,37 @@ import matplotlib.pyplot as plt
 import torch
 import torchvision.models as models
 
-from HGCN import HGCN
-# data = process()
-# node_features = data.node_features
+# from HGNN import HGN
+from HGNNP import HGNP
 
-# # Range of clusters to try
-# cluster_range = range(31, 51)
-# wcss = []
+def visualize_with_tsne(model, data, labels):
+    # Set model to evaluation mode
+    model.eval()
+    
+    # Forward pass through the model to get the features
+    with torch.no_grad():
+        features = model(data.x, data.hg)
+    
+    # Convert features to numpy array if not already
+    features_np = features.detach().numpy()
+    
+    # Initialize t-SNE with desired parameters
+    tsne = TSNE(n_components=2, verbose=1, perplexity=40, n_iter=300)
+    
+    # Fit and transform the features to 2D
+    tsne_results = tsne.fit_transform(features_np)
+    
+    # Plotting
+    plt.figure(figsize=(8, 8))
+    scatter = plt.scatter(tsne_results[:, 0], tsne_results[:, 1], c=labels, cmap='viridis', alpha=0.5)
+    plt.legend(*scatter.legend_elements(), title="Classes")
+    plt.title("t-SNE visualization of model features")
+    plt.show()
 
-# for k in cluster_range:
-#     kmeans = KMeans(n_clusters=k, init='k-means++', max_iter=300, n_init=10, random_state=0)
-#     kmeans.fit(node_features)
-#     wcss.append(kmeans.inertia_)
-
-# plt.figure(figsize=(10, 6))
-# plt.plot(cluster_range, wcss, marker='o', linestyle='-', color='b')
-# plt.title('Elbow Method For Optimal k')
-# plt.xlabel('Number of clusters')
-# plt.ylabel('WCSS')
-# plt.xticks(cluster_range)
-# plt.show()
-
-model = HGCN()
-state_dict = torch.load('HGCN.pth')
-model.load_state_dict(state_dict)
-model.eval()
-
-# F3D visualization
-weights = state_dict['hcn1.bias'].detach().numpy()
-
-tsne = TSNE(n_components=3, perplexity=30.0, n_iter=300, random_state=42)
-tsne_results = tsne.fit_transform(weights)
-
-fig = plt.figure(figsize=(10, 8))
-ax = fig.add_subplot(111, projection='3d')
-ax.scatter(tsne_results[:, 0], tsne_results[:, 1],
-           tsne_results[:, 2], alpha=0.5)
-ax.set_title('3D t-SNE Visualization of Hypergraph Model')
-ax.set_xlabel('t-SNE Feature 1')
-ax.set_ylabel('t-SNE Feature 2')
-ax.set_zlabel('t-SNE Feature 3')
-plt.show()
+if __name__ == "__main__":
+    model, data = HGNP()
+    # Assume 'labels' is a 1D array or list of true class labels corresponding to 'data.x'
+    labels = data.y.detach().numpy()  # Modify according to how your labels are stored
+    
+    # Visualize
+    visualize_with_tsne(model, data, labels)

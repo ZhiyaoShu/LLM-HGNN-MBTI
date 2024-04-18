@@ -23,16 +23,17 @@ class GAT_Net(torch.nn.Module):
         return x
 
 def GAT():
-    data = pickle.load(open('edges_delete_file.pkl', 'rb'))
+    # data = pickle.load(open('graph_with_embedding.pkl', 'rb'))
+    data = pickle.load(open('baseline_delete_edge_file.pkl', 'rb'))
     model = GAT_Net(features=data.x.shape[1], hidden=200, classes=17, heads=1)
     
-    print(f"Data object: {data}")  
-    print(f"Data x: {data.x}")
-    print(f"Data y: {data.y}")
+    # print(f"Data object: {data}")  
+    # print(f"Data x: {data.x}")
+    # print(f"Data y: {data.y}")
     
-    unique, counts = np.unique(data.y.numpy(), return_counts=True)
-    print("Label distribution:", dict(zip(unique, counts)))
-    print("Train, Val, Test masks counts:", data.train_mask.sum().item(), data.val_mask.sum().item(), data.test_mask.sum().item())
+    # unique, counts = np.unique(data.y.numpy(), return_counts=True)
+    # print("Label distribution:", dict(zip(unique, counts)))
+    # print("Train, Val, Test masks counts:", data.train_mask.sum().item(), data.val_mask.sum().item(), data.test_mask.sum().item())
     
     return model, data
 
