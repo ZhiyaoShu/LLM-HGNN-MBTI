@@ -2,17 +2,13 @@
 import numpy as np
 import torch
 import torch.nn as nn
-from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score, roc_auc_score
-from torch.optim.lr_scheduler import ReduceLROnPlateau
-from sklearn.metrics import confusion_matrix, roc_auc_score
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 import torch.nn.functional as F
 from utils import seed_setting
 import torchmetrics
 from GCN import GCN
 from GAT import GAT
 from G_transformer import GCNCT
-import joblib
-import pickle
 import copy
 
 # Random guess
