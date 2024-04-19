@@ -1,3 +1,4 @@
 *.pkl
 checout/
 archieve/
+.env

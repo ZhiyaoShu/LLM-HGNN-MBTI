@@ -11,10 +11,7 @@ from model.HGCN import HGCN
 from model.HGNNP import HGNP
 from model.HGNN import HGN
 from model.HGAT import HGAT
-import torch.optim as optim
 import copy
-import tensorflow as tf
-import pickle
 from focal_loss.focal_loss import FocalLoss
 
 # Random guess
