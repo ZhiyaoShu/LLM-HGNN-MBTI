@@ -4,9 +4,9 @@ import dhg
 from dhg.nn import HGNNConv
 import pickle
 
-from utils.model_config import normalize_features
-from model.data_preparation import load_data
-from model.Hyperedges import get_dhg_hyperedges
+from model_config import normalize_features
+from data_preparation import load_data
+from Hyperedges import get_dhg_hyperedges
 
 class HGNN(nn.Module):
     r"""The HGNN model proposed in `Hypergraph Neural Networks <https://arxiv.org/pdf/1809.09401>`_ paper (AAAI 2019).

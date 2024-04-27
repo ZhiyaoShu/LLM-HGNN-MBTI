@@ -11,7 +11,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import ast
 from sklearn.cluster import KMeans
 from torch import nn, optim
-from model.data_preparation import load_data
+from data_preparation import load_data
 
 
 # Define the self loop removal function

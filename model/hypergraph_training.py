@@ -3,14 +3,16 @@ import torch
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch.nn.functional as F
-from utils.model_config import seed_setting
+
 import torchmetrics
 import torch.nn as nn
 # from DHGCN import DHGCN
-from model.HGCN import HGCN
-from model.HGNNP import HGNP
-from model.HGNN import HGN
-from model.HGAT import HGAT
+from HGCN import HGCN
+from HGNNP import HGNP
+from HGNN import HGN
+from HGAT import HGAT
+from model_config import seed_setting
+
 import copy
 from focal_loss.focal_loss import FocalLoss
 

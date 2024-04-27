@@ -15,15 +15,15 @@ from sklearn.cluster import KMeans
 
 def load_data():
     # Load merged data
-    df = pd.read_csv("data/updated_merge_new_df.csv")
-
+    df = pd.read_csv("data/user_data_cleaned.csv")
+    # df_mbti = pd.read_csv("data/updated_merge_new_df.csv")
     # Load embeddings
-    embeddings_df = pd.read_json("data/embeddings3.json")
+    embeddings_df = pd.read_json("data/embeddings.json")
 
     return df, embeddings_df
 
 
-def preprocess_data(df):
+def preprocess_data(df_mbti):
     # Encoding MBTI to binary and numerical representation
     # def encode_mbti(mbti):
     #     encoding = {
@@ -62,10 +62,10 @@ def preprocess_data(df):
         return mbti_to_number[mbti]
 
     # Apply encoding
-    df.loc[:, "Label"] = df["MBTI"].apply(encode_mbti_number)
+    df_mbti.loc[:, "Label"] = df_mbti["MBTI"].apply(encode_mbti_number)
     # Prepare class and label methods
     y_follow_label = torch.tensor(
-        df.loc[:, "Label"].values, dtype=torch.long
+        df_mbti.loc[:, "Label"].values, dtype=torch.long
     ).unsqueeze(1)
     # Get the enneagram types from existed dataset
     # enneagram = df["EnneagramType"].unique()
@@ -130,7 +130,7 @@ def one_hot_features(df, embeddings_df):
 
 def prepare_graph_tensors(combined_df, df):
     # Convert 'Follower' and 'Groups' columns from string to list
-    df["Follower"] = df["Follower"].apply(ast.literal_eval)
+    df['Follower'] = df['Follower'].fillna('[]').apply(ast.literal_eval)
     # df['Groups'] = df['Groups'].apply(ast.literal_eval)
 
     # Node Features
@@ -184,16 +184,16 @@ def generate_masks(y, split=(2, 1, 1)):
 
 
 def process():
-    df, embeddings_df = load_data()
+    df, df_mbti, embeddings_df = load_data()
     # Unpack the tuple returned by preprocess_data
-    y_follow_label = preprocess_data(df)
+    y_follow_label = preprocess_data(df_mbti)
 
     combined_df = one_hot_features(df, embeddings_df)
 
     node_features, edge_index, user_to_index = prepare_graph_tensors(combined_df, df)
     data = Data(x=node_features, edge_index=edge_index)
     
-    data.y = y.float()
+    # data.y = y.float()
     # data.y = torch.argmax(y, dim=1)
 
     # Correctly use y_follow_label tensor, ensuring it's a float tensor
