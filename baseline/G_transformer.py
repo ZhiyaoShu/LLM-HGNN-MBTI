@@ -26,8 +26,8 @@ class GraphTransformer(torch.nn.Module):
         return F.log_softmax(x, dim=1)
 
 def GCNCT():
-    data = pickle.load(open('baseline_data2.pkl', 'rb'))
-    # data = pickle.load(open('graph_with_embedding.pkl', 'rb'))
+    # data = pickle.load(open('baseline_data2.pkl', 'rb'))
+    data = pickle.load(open('graph_with_embedding2.pkl', 'rb'))
     model = GraphTransformer(features=data.x.shape[1], hidden=200, classes=16)
     
     # print(f"Data object: {data}")  

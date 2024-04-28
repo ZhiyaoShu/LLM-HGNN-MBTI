@@ -73,11 +73,7 @@ def get_dhg_hyperedges(data, df):
         hg.add_hyperedges(nodes, group_name=group_id)  
 
     data.hg = hg
-    num_v = data.x.size(0)
-    e_list = hg.get_edge_list()
-    print("Number of vertices (num_v):", num_v)
-    print("Edge list (e_list):", e_list)
-
+    
     return data
 
 

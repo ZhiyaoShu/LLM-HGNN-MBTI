@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from util.model_config import seed_setting
 import torchmetrics
 # from GCN import GCN
-# from GAT import GAT
+from baseline.GAT import GAT
 from baseline.G_transformer import GCNCT
 import copy
 
@@ -38,7 +38,7 @@ def main_training_loop(model, data):
     seed_setting()
 
     # print(f"criterion: {criterion}")
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.05, weight_decay=5e-4)  
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.05, weight_decay=1e-8)  
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1) 
 
 
@@ -49,8 +49,15 @@ def main_training_loop(model, data):
 
         target = data.y[data.train_mask].squeeze()
         target = target.long()
-                
+        if torch.isnan(out).any():
+            print("NaN detected in model output!")
+            return torch.tensor(float('nan'))
+
         loss = F.cross_entropy(out[data.train_mask], target)
+        if torch.isnan(loss):
+            print("NaN detected in loss computation!")
+            print("Model output (first few values):", out[:5])
+            return torch.tensor(float('nan'))
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
         optimizer.step()
@@ -131,9 +138,9 @@ def main_training_loop(model, data):
 
 
 def final_train():
-    # model,data = GAT()
+    model,data = GAT()
     # model,data = GCN()
-    model,data = GCNCT()
+    # model,data = GCNCT()
     main_training_loop(model, data)
     
 if __name__ == "__main__":  

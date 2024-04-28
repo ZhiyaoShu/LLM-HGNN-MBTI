@@ -9,16 +9,19 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import ast
 import pickle
 
+def fill_na_with_mean(df):
+    for column in df.select_dtypes(include=[np.number]):
+        df[column].fillna(df[column].mean(), inplace=True)
+    return df
 
 def load_data():
     # Load merged data
     df = pd.read_csv("data/user_data_cleaned.csv")
-    # df_mbti = pd.read_csv("data/updated_merge_new_df.csv")
+    # df_mbti = pd.read_csv("data/updated_merge_new_df_2.csv")
     # Load embeddings
-    embeddings_df = pd.read_json("data/embeddings.json")
-
+    embeddings_df = pd.read_json("data/embeddings2.json")
+    df = fill_na_with_mean(df)
     return df, embeddings_df
-
 
 def preprocess_data(df_mbti):
     # Encoding MBTI to binary and numerical representation
@@ -94,10 +97,10 @@ def preprocess_data(df_mbti):
 
 def one_hot_features(df, embeddings_df):
     df.fillna(
-        {"Gender": "Unknown", "Sexual": "Unknown", "About": "", "Location": "Unknown"},
+        {"Gender": "Unknown", "Sexual": "Unknown", "Location": "Unknown"},
         inplace=True,
     )
-
+    df = fill_na_with_mean(df)
     # One-hot encode the categorical features
     encoder = OneHotEncoder(handle_unknown="ignore")
     one_hot_encoded = encoder.fit_transform(
@@ -128,7 +131,8 @@ def one_hot_features(df, embeddings_df):
 def prepare_graph_tensors(combined_df, df):
     # Convert 'Follower' and 'Groups' columns from string to list
     df['Follower'] = df['Follower'].fillna('[]').apply(ast.literal_eval)
-    # df['Groups'] = df['Groups'].apply(ast.literal_eval)
+    if combined_df.isnull().any().any():
+        combined_df.fillna(0, inplace=True)
 
     # Node Features
     node_features = torch.tensor(combined_df.iloc[:, 1:].values, dtype=torch.float)
@@ -181,13 +185,19 @@ def generate_masks(y, split=(2, 1, 1)):
 
 
 def process():
-    df, df_mbti, embeddings_df = load_data()
+    df, embeddings_df, df_mbti = load_data()
     # Unpack the tuple returned by preprocess_data
     y_follow_label = preprocess_data(df_mbti)
 
     combined_df = one_hot_features(df, embeddings_df)
 
     node_features, edge_index, user_to_index = prepare_graph_tensors(combined_df, df)
+    def check_for_nans(tensor, name="Tensor"):
+        if torch.isnan(tensor).any():
+            raise ValueError(f"{name} contains NaN values")
+    check_for_nans(node_features, "Node Features")
+    check_for_nans(edge_index, "Edge Index")
+    
     data = Data(x=node_features, edge_index=edge_index)
     
     # data.y = y.float()
@@ -196,9 +206,7 @@ def process():
     # Correctly use y_follow_label tensor, ensuring it's a float tensor
     data.y = y_follow_label.float()
 
-    # Assuming generate_masks function needs to work with actual labels for splitting
-    # If y_follow_label is used for model training, it should be used for generating masks too.
-    # Adjust this part if you need to use y_follow_encode instead.
+
     train_mask, val_mask, test_mask = generate_masks(
         y_follow_label.squeeze()
     )  # Remove unnecessary dimension
@@ -215,6 +223,7 @@ def process():
     print("Total number of classes:", len(data.y.unique()))
     # print("node features:", node_features.shape)
     # print("edge index:", edge_index)
+    # print("y_follow_label:", y_follow_label)
     # print(node_features.shape)
     # print(edge_index.shape)
     print(f"Train mask number: {torch.sum(data.train_mask)}")
