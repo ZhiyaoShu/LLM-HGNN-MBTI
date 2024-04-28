@@ -4,9 +4,9 @@ import dhg
 from dhg.nn import HGNNConv
 import pickle
 
-from model_config import normalize_features
-from data_preparation import load_data
-from Hyperedges import get_dhg_hyperedges
+from util.model_config import normalize_features
+from model.data_preparation import load_data
+from model.Hyperedges import get_dhg_hyperedges
 
 class HGNN(nn.Module):
     r"""The HGNN model proposed in `Hypergraph Neural Networks <https://arxiv.org/pdf/1809.09401>`_ paper (AAAI 2019).
@@ -49,9 +49,9 @@ class HGNN(nn.Module):
         return X
 
 def HGN():
-    # data = pickle.load(open("baseline_data2.pkl", "rb"))
+    data = pickle.load(open("baseline_data2.pkl", "rb"))
     # data = pickle.load(open("test_train_change1.pkl", "rb"))
-    data = pickle.load(open("graph_with_embedding2.pkl", "rb"))
+    # data = pickle.load(open("graph_with_embedding2.pkl", "rb"))
     # data = pickle.load(open("Enneagram_embedding.pkl", "rb"))
     df, _ = load_data()
     data = get_dhg_hyperedges(data, df)

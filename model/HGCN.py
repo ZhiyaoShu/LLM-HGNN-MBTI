@@ -6,7 +6,7 @@ from dhg.nn import HGNNConv
 import pickle
 from dhg.nn import HGNNPConv
 from torch.nn import Linear, LayerNorm, ReLU, Sequential
-from model_config import normalize_features
+from util.model_config import normalize_features
 from data_preparation import load_data
 from Hyperedges import get_dhg_hyperedges, custom_hyperedges
 from torch_geometric.nn import DeepGCNLayer

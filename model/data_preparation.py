@@ -3,14 +3,11 @@ import torch.utils.data
 import numpy as np
 import pandas as pd
 from torch_geometric.utils import index_to_mask
-from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 from torch_geometric.data import Data
 from sklearn.feature_extraction.text import TfidfVectorizer
 import ast
 import pickle
-from sklearn.metrics import silhouette_score
-from sklearn.cluster import KMeans
 
 
 def load_data():

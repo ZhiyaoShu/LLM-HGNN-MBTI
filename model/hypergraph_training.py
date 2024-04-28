@@ -7,11 +7,11 @@ import torch.nn.functional as F
 import torchmetrics
 import torch.nn as nn
 # from DHGCN import DHGCN
-from HGCN import HGCN
-from HGNNP import HGNP
-from HGNN import HGN
-from HGAT import HGAT
-from model_config import seed_setting
+# from HGCN import HGCN
+# from HGNNP import HGNP
+from model.HGNN import HGN
+# from HGAT import HGAT
+from util.model_config import seed_setting
 
 import copy
 from focal_loss.focal_loss import FocalLoss

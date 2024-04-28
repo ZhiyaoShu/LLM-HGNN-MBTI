@@ -4,12 +4,13 @@ import torch
 import torch.nn as nn
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 import torch.nn.functional as F
-from utils.model_config import seed_setting
+from util.model_config import seed_setting
 import torchmetrics
-from baseline.GCN import GCN
-from baseline.GAT import GAT
+# from GCN import GCN
+# from GAT import GAT
 from baseline.G_transformer import GCNCT
 import copy
+
 
 # Random guess
 def random_guess_baseline(y_true):
@@ -78,7 +79,7 @@ def main_training_loop(model, data):
         y_true_flat = y_true.ravel()
         y_pred_flat = y_pred.ravel()
         
-        auroc = torchmetrics.AUROC(num_classes=17, task="multiclass")
+        auroc = torchmetrics.AUROC(num_classes=16, task="multiclass")
         auc_score = auroc(pred[data.test_mask], target)
         auc_score = auroc.compute()
         print(f"AUC Score: {auc_score}")

@@ -6,7 +6,7 @@ from torch_geometric.datasets import TUDataset
 from torch_geometric.nn import GCNConv
 import numpy as np
 import pickle
-from model.data_preparation import process
+# from model.data_preparation import process
 
 
 class GraphTransformer(torch.nn.Module):
@@ -26,9 +26,9 @@ class GraphTransformer(torch.nn.Module):
         return F.log_softmax(x, dim=1)
 
 def GCNCT():
-    data = pickle.load(open('baseline_delete_edge_file.pkl', 'rb'))
+    data = pickle.load(open('baseline_data2.pkl', 'rb'))
     # data = pickle.load(open('graph_with_embedding.pkl', 'rb'))
-    model = GraphTransformer(features=data.x.shape[1], hidden=200, classes=17)
+    model = GraphTransformer(features=data.x.shape[1], hidden=200, classes=16)
     
     # print(f"Data object: {data}")  
     # print(f"Data x: {data.x}")

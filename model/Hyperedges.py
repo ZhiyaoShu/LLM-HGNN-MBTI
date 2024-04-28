@@ -11,7 +11,7 @@ from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import ast
 from sklearn.cluster import KMeans
 from torch import nn, optim
-from data_preparation import load_data
+from model.data_preparation import load_data
 
 
 # Define the self loop removal function
@@ -22,6 +22,10 @@ def remove_self_loops(edge_index: torch.Tensor) -> torch.Tensor:
 device = torch.device("cuda" if torch.cuda else "cpu")
 
 def get_dhg_hyperedges(data, df):
+    print("Checking for non-finite values in feature matrix...")
+    if not torch.isfinite(data.x).all():
+        print("Non-finite values found in data.x, applying fill strategy...")
+        data.x[~torch.isfinite(data.x)] = 0
     # Define the hyperedges based on data
     edge_index = data.edge_index
     edge_index_no_self_loops = remove_self_loops(edge_index)

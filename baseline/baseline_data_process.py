@@ -9,58 +9,83 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 import ast
 import pickle
 
-def load_onehot_data():
-    df = pd.read_csv('data/updated_merge_new_df.csv')
-    
-    return df
 
-def preprocess_data(df):
+def load_onehot_data():
+    df = pd.read_csv('data/user_data_cleaned.csv')
+    df_mbti = pd.read_csv('data/updated_merge_new_df - updated_merge_new_df.csv')
+
+    return df, df_mbti
+
+def preprocess_data(df_mbti):
     def encode_mbti_number(mbti):
         mbti_to_number = {
-            'INTJ': 1, 'ENTJ': 2, 'INTP': 3, 'ENTP': 4,
-            'INFJ': 5, 'ENFJ': 6, 'INFP': 7, 'ENFP': 8,
-            'ISTJ': 9, 'ESTJ': 10, 'ISFJ': 11, 'ESFJ': 12,
-            'ISTP': 13, 'ESTP': 14, 'ISFP': 15, 'ESFP': 16
+            "INTJ": 0,
+            "ENTJ": 1,
+            "INTP": 2,
+            "ENTP": 3,
+            "INFJ": 4,
+            "INFP": 5,
+            "ENFJ": 6,
+            "ENFP": 7,
+            "ISTJ": 8,
+            "ESTJ": 9,
+            "ISFJ": 10,
+            "ESFJ": 11,
+            "ISTP": 12,
+            "ESTP": 13,
+            "ISFP": 14,
+            "ESFP": 15,
         }
-        if mbti in ['Unknown', 'nan', None] or pd.isna(mbti):
-            return 0
-        return mbti_to_number.get(mbti, 0)
-
+        return mbti_to_number[mbti]
     # Apply encoding
-    df.loc[:, 'Label'] = df['MBTI'].apply(
+    df_mbti.loc[:, 'Label'] = df_mbti['MBTI'].apply(
         encode_mbti_number)
 
     # Prepare class and label methods
     y_follow_label = torch.tensor(
-        df.loc[:, 'Label'].values, dtype=torch.long).unsqueeze(1)
+        df_mbti.loc[:, 'Label'].values, dtype=torch.long).unsqueeze(1)
 
     return y_follow_label
 
 def one_hot_features(df):
-    df.fillna({'Gender': 'Unknown', 'Sexual': 'Unknown', 'About': '', 'Location': 'Unknown'}, inplace=True)
-    
+    print("The number of total nodes:", df.shape[0])
+    print("Before fillna:", df.isnull().sum())
+    df['Username'].fillna('Unknown_User', inplace=True)
+    df.fillna({'Gender': 'Unknown', 'Sexual': 'Unknown', 'About': '', 'Location': 'Unknown', 'Followers':'Unknown'}, inplace=True)
+    print("After fillna:", df.isnull().sum())
+
     # One-hot encode the categorical features
     encoder = OneHotEncoder(handle_unknown='ignore')
     one_hot_encoded = encoder.fit_transform(df[['Gender', 'Sexual', 'Location']]).toarray()
     
     # Use all generated feature names for columns
-    one_hot_df = pd.DataFrame(one_hot_encoded, columns=encoder.get_feature_names_out())
+    one_hot_df = pd.DataFrame(one_hot_encoded, columns=encoder.get_feature_names_out()).reset_index(drop=True)
     
     tfidf_vectorizer = TfidfVectorizer(max_features=100)  # Limiting to the top 100 features
     about_tfidf = tfidf_vectorizer.fit_transform(df['About'].fillna('')).toarray()
-    about_tfidf_df = pd.DataFrame(about_tfidf, columns=[f"tfidf_{i}" for i in range(about_tfidf.shape[1])])
+    about_tfidf_df = pd.DataFrame(about_tfidf, columns=[f"tfidf_{i}" for i in range(about_tfidf.shape[1])]).reset_index(drop=True)
 
     numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
     columns_to_keep = ['Username'] + numeric_columns
-    combined_df = pd.concat([df[columns_to_keep], one_hot_df], axis=1)
+    combined_df = pd.concat([df[columns_to_keep].reset_index(drop=True), one_hot_df, about_tfidf_df], axis=1)
     
+    print(one_hot_df.shape, about_tfidf_df.shape, combined_df.shape)
     return combined_df
 
 def prepare_graph_tensors(combined_df, df):
+    df['Follower'].fillna('[]', inplace=True)
+    df['Groups'].fillna('[]', inplace=True)
+
+    # Convert 'Follower' and 'Groups' columns from string to list safely
+    def safe_literal_eval(s):
+        try:
+            return ast.literal_eval(s)
+        except (ValueError, SyntaxError):
+            return [] 
 
     # Convert 'Follower' and 'Groups' columns from string to list
-    df['Follower'] = df['Follower'].apply(ast.literal_eval)
-    df['Groups'] = df['Groups'].apply(ast.literal_eval)
+    df['Follower'] = df['Follower'].apply(safe_literal_eval)
+    df['Groups'] = df['Groups'].apply(safe_literal_eval)
 
     # Node Features
     node_features = torch.tensor(
@@ -117,9 +142,11 @@ def generate_masks(y, split=(2, 1, 1)):
     return train_mask, val_mask, test_mask
 
 def process():
-    df = load_onehot_data()
-    y_follow_label = preprocess_data(df)
+    df, df_mbti = load_onehot_data()
+    # print("The number of loaded nodes:", df_mbti.shape[0])
+    y_follow_label = preprocess_data(df_mbti)
     combined_df = one_hot_features(df)
+    # print("The number of total combined nodes:", combined_df.shape[0])
     node_features, edge_index, user_to_index = prepare_graph_tensors(combined_df, df)
     data = Data(x=node_features, edge_index=edge_index)
     y = y_follow_label
@@ -134,7 +161,8 @@ def process():
     data.val_mask = val_mask
     data.test_mask = test_mask
     data.groups = df['Groups'].tolist()
-        
+    
+    # print("the number of total nodes for mask", data.x.shape[0])
     with open('baseline_data2.pkl', 'wb') as f:
         pickle.dump(data, f)
         

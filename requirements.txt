@@ -19,3 +19,6 @@ torchvision
 torchaudio
 focal_loss_torch
 openai
+torch-geometric
+torch_sparse
+torch_scatter
