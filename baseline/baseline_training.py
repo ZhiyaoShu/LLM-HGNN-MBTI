@@ -6,8 +6,8 @@ from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_sc
 import torch.nn.functional as F
 from util.model_config import seed_setting
 import torchmetrics
-# from GCN import GCN
-from baseline.GAT import GAT
+from baseline.GCN import GCN
+# from baseline.GAT import GAT
 from baseline.G_transformer import GCNCT
 import copy
 
@@ -38,7 +38,7 @@ def main_training_loop(model, data):
     seed_setting()
 
     # print(f"criterion: {criterion}")
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.05, weight_decay=1e-8)  
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.05, weight_decay=5e-4)  
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1) 
 
 
@@ -138,8 +138,8 @@ def main_training_loop(model, data):
 
 
 def final_train():
-    model,data = GAT()
-    # model,data = GCN()
+    # model,data = GAT()
+    model,data = GCN()
     # model,data = GCNCT()
     main_training_loop(model, data)
     

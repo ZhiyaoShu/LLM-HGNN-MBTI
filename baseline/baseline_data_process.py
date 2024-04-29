@@ -11,12 +11,11 @@ import pickle
 
 
 def load_onehot_data():
-    df = pd.read_csv('data/user_data_cleaned.csv')
-    df_mbti = pd.read_csv('data/updated_merge_new_df - updated_merge_new_df.csv')
+    df = pd.read_csv('data/updated_merge_new_df.csv', encoding='utf-8')
 
-    return df, df_mbti
+    return df
 
-def preprocess_data(df_mbti):
+def preprocess_data(df):
     def encode_mbti_number(mbti):
         mbti_to_number = {
             "INTJ": 0,
@@ -38,21 +37,20 @@ def preprocess_data(df_mbti):
         }
         return mbti_to_number[mbti]
     # Apply encoding
-    df_mbti.loc[:, 'Label'] = df_mbti['MBTI'].apply(
+    df.loc[:, 'Label'] = df['MBTI'].apply(
         encode_mbti_number)
 
     # Prepare class and label methods
     y_follow_label = torch.tensor(
-        df_mbti.loc[:, 'Label'].values, dtype=torch.long).unsqueeze(1)
+        df.loc[:, 'Label'].values, dtype=torch.long).unsqueeze(1)
 
     return y_follow_label
 
 def one_hot_features(df):
-    print("The number of total nodes:", df.shape[0])
-    print("Before fillna:", df.isnull().sum())
-    df['Username'].fillna('Unknown_User', inplace=True)
-    df.fillna({'Gender': 'Unknown', 'Sexual': 'Unknown', 'About': '', 'Location': 'Unknown', 'Followers':'Unknown'}, inplace=True)
-    print("After fillna:", df.isnull().sum())
+    df.drop(columns=['MBTI'], inplace=True)
+    # df['Username'].fillna('Unknown_User', inplace=True)
+    df.fillna({'Gender': 'Unknown', 'Sexual': 'Unknown', 'Location': 'Unknown', 'Followers':'Unknown'}, inplace=True)
+    # print("After fillna:", df.isnull().sum())
 
     # One-hot encode the categorical features
     encoder = OneHotEncoder(handle_unknown='ignore')
@@ -69,7 +67,7 @@ def one_hot_features(df):
     columns_to_keep = ['Username'] + numeric_columns
     combined_df = pd.concat([df[columns_to_keep].reset_index(drop=True), one_hot_df, about_tfidf_df], axis=1)
     
-    print(one_hot_df.shape, about_tfidf_df.shape, combined_df.shape)
+    # print(one_hot_df.shape, about_tfidf_df.shape, combined_df.shape)
     return combined_df
 
 def prepare_graph_tensors(combined_df, df):
@@ -142,9 +140,9 @@ def generate_masks(y, split=(2, 1, 1)):
     return train_mask, val_mask, test_mask
 
 def process():
-    df, df_mbti = load_onehot_data()
+    df = load_onehot_data()
     # print("The number of loaded nodes:", df_mbti.shape[0])
-    y_follow_label = preprocess_data(df_mbti)
+    y_follow_label = preprocess_data(df)
     combined_df = one_hot_features(df)
     # print("The number of total combined nodes:", combined_df.shape[0])
     node_features, edge_index, user_to_index = prepare_graph_tensors(combined_df, df)
@@ -163,7 +161,7 @@ def process():
     data.groups = df['Groups'].tolist()
     
     # print("the number of total nodes for mask", data.x.shape[0])
-    with open('baseline_data2.pkl', 'wb') as f:
+    with open('baseline_data1.pkl', 'wb') as f:
         pickle.dump(data, f)
         
     return data

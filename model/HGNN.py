@@ -49,9 +49,9 @@ class HGNN(nn.Module):
         return X
 
 def HGN():
-    # data = pickle.load(open("baseline_data2.pkl", "rb"))
+    data = pickle.load(open("baseline_data2.pkl", "rb"))
     # data = pickle.load(open("test_train_change1.pkl", "rb"))
-    data = pickle.load(open("graph_with_embedding2.pkl", "rb"))
+    # data = pickle.load(open("graph_with_embedding2.pkl", "rb"))
     # data = pickle.load(open("Enneagram_embedding.pkl", "rb"))
     df, _ = load_data()
     data = get_dhg_hyperedges(data, df)
