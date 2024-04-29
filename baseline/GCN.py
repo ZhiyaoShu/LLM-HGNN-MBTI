@@ -31,7 +31,7 @@ class GCN_Net(torch.nn.Module):
 def GCN():
     data = pickle.load(open('baseline_data2.pkl', 'rb'))
     # data = pickle.load(open('baseline_delete_edge_file.pkl', 'rb'))
-    model = GCN_Net(features=data.x.shape[1], hidden=200, classes=17)
+    model = GCN_Net(features=data.x.shape[1], hidden=200, classes=16)
     
     # print(f"Data object: {data}")  
     # print(f"Data x: {data.x}")
