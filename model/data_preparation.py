@@ -17,7 +17,7 @@ def fill_na_with_mean(df):
 def load_data():
     # Load merged data
     df = pd.read_csv("data/user_data_cleaned.csv")
-    # df_mbti = pd.read_csv("data/updated_merge_new_df_2.csv")
+    df_mbti = pd.read_csv("data/updated_merge_new_df_2.csv")
     # Load embeddings
     embeddings_df = pd.read_json("data/embeddings2.json")
     df = fill_na_with_mean(df)
@@ -185,9 +185,9 @@ def generate_masks(y, split=(2, 1, 1)):
 
 
 def process():
-    df, embeddings_df, df_mbti = load_data()
+    df, embeddings_df = load_data()
     # Unpack the tuple returned by preprocess_data
-    y_follow_label = preprocess_data(df_mbti)
+    y_follow_label = preprocess_data(df)
 
     combined_df = one_hot_features(df, embeddings_df)
 
