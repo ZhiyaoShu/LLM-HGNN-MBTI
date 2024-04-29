@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import tiktoken
 from sentence_transformers import SentenceTransformer
 from huggingface_hub import login
+import numpy as np
 
 load_dotenv()
 
@@ -31,17 +32,19 @@ token_limitation_dict = {
 }
 
 INSTRUCTION = """
-Please provide the summarized one concise paragraph to describe each user based on the following details: relationship status, Gender, EnneagramType, occupation, About, Location, participated Groups, and Sexual status. 
+Generate a descriptive paragraph about each user's persona. The description should focus on personal traits and participation in groups, with references to demographic details such as relationship status, gender, location, or sexual orientation. Format the result as a plain JSON object, ensuring that the output is concise and clear of any additional formatting like newline characters or escape sequences. Example output:
 
-Ensure the result is formatted as a JSON object, like the following example: Username is a unique individual who identifies as Gender, living in Location. Embracing Sexual, pronouns is characterized by any feature, and participate in groups. 
-
-The output should ONLY contain descriptions, NO any given demographic information NOR additional characters, symbols or formatting included.
+{
+   "Username, known for their unique perspective on life and participation in varied interest groups, exhibits a creative and dynamic personality in their social interactions."
+}
 """
+def batch_data(dataframe, num_batches):
+    return np.array_split(dataframe, num_batches)
 
-def query_openai(user_data, model_name):
+def query_openai(user_data_batch, model_name):
     outputs = []
     
-    for index, row in tqdm(user_data.iterrows(), total=user_data.shape[0], desc="Processing users"):
+    for index, row in tqdm(user_data_batch.iterrows(), total=user_data_batch.shape[0], desc="Processing users"):
         prompt_text = f"{INSTRUCTION} {json.dumps(row.to_dict())}"
         try:
             response = client_openai.chat.completions.create(
@@ -72,11 +75,22 @@ def save_to_json(data, filename):
 
 embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L12-v2')
 
+def main_execution():
+    user_df = pd.read_csv('data/user_data_cleaned.csv', encoding='utf-8')
+    user_batches = batch_data(user_df, 10)
+    all_outputs = {}
+    
+    for i, batch in enumerate(user_batches):
+        print(f"Processing batch {i+1}/{len(user_batches)}")
+        batch_outputs = query_openai(batch, MODEL_NAME)
+        all_outputs.update(batch_outputs)
+    
+    save_to_json(all_outputs, "data/output_descriptions.json")
+
 # Main execution
 if __name__ == "__main__":
     try:
-        output_dict = query_openai(user_df, MODEL_NAME)
-        save_to_json(output_dict, "data/output_descriptions.json")
+        main_execution()
         with open("data/output_descriptions.json", 'r') as file:
             descriptions = json.load(file)
 
