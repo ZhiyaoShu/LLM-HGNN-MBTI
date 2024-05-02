@@ -2,3 +2,4 @@
 checout/
 archieve/
 .env
+__pycache__/

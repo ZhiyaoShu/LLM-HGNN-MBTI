@@ -23,9 +23,10 @@ class GAT_Net(torch.nn.Module):
         return x
 
 def GAT():
-    data = pickle.load(open('baseline_data1.pkl', 'rb'))
+    # data = pickle.load(open('baseline_data1.pkl', 'rb'))
+    data = pickle.load(open("checkout/test_train_change7.pkl", "rb"))
     # data = pickle.load(open('graph_with_embedding2.pkl', 'rb'))
-    model = GAT_Net(features=data.x.shape[1], hidden=200, classes=16, heads=1)
+    model = GAT_Net(features=data.x.shape[1], hidden=200, classes=17, heads=1)
     
     print(f"Data object: {data}")  
     print(f"Data x: {data.x}")
