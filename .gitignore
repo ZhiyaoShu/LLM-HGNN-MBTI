@@ -3,3 +3,4 @@ checout/
 archieve/
 .env
 __pycache__/
+*.xlsx

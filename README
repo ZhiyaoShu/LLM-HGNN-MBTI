@@ -1,0 +1,25 @@
+# LLM & HGNN
+
+![Image](assets/main_model.png)
+
+## [Datasets](data/users_data_all.json)
+
+We collected totally **85462** users profiles from **[Personality Cafe]**, with The dataset includes the following information:
+
+* Usernames
+* MBTI types
+* Gender
+* Followers
+* Self-description (About)
+* Sexual orientation
+* EnneagramType
+
+We selected 17035 users with MBTI types filled with MBTI and Enneagram information to process our experiments. Feel free to download the dataset and use it for your research.
+
+## Metrics
+
+Loss functions
+
+Classification Metrics
+
+## Results
