@@ -64,11 +64,10 @@ To evaluate the effectiveness of our HGNN and LLM components, we compare their p
 
 Within the enhancement of LLMs, the overal performance achieved a higher accuracy and F1 score compared to the baseline models. The HGNN model outperformed the other models in terms of accuracy, F1 score, and AUC.
 
-### LLM Processed Results
+### LLM Pre-processed Results
 
 | Model          | Accuracy | AUC value | F1 score | F1 score (micro) |
 |----------------|----------|-----------|----------|------------------|
-| **MBTI Traits**|          |           |          |                  |
 | **HGNNP**      | 0.8352   | 0.9301    | 0.8187   | 0.8352           |
 | **HGNN**       | 0.8659   | 0.9357    | 0.8652   | 0.8659           |
 | **GAT**        | 0.7347   | 0.9206    | 0.6787   | 0.6644           |
@@ -80,7 +79,6 @@ Within the enhancement of LLMs, the overal performance achieved a higher accurac
 
 | Model          | Accuracy | AUC value | F1 score | F1 score (micro) |
 |----------------|----------|-----------|----------|------------------|
-| **MBTI Traits**|          |           |          |                  |
 | **HGNNP**      | 0.8282   | 0.9266    | 0.8236   | 0.8282           |
 | **HGNN**       | 0.8538   | 0.9349    | 0.8470   | 0.8538           |
 | **GAT**        | 0.7641   | 0.9042    | 0.7402   | 0.7325           |
