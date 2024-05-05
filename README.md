@@ -74,7 +74,6 @@ Within the enhancement of LLMs, the overal performance achieved a higher accurac
 | **GAT**        | 0.7347   | 0.9206    | 0.6787   | 0.6644           |
 | **Gtransformer** | 0.7051 | 0.9070    | 0.6975   | 0.7051           |
 | **GCN**        | 0.7030   | 0.9071    | 0.6416   | 0.7037           |
-| **LLM**        | 0.0891   | 0.5056    | 0.0290   | 0.0781           |
 | **Random guess**| 0.0338  | 0.0061    | 0.0069   | 0.0338           |
 
 ### One-hot Index Input Results
@@ -87,7 +86,6 @@ Within the enhancement of LLMs, the overal performance achieved a higher accurac
 | **GAT**        | 0.7641   | 0.9042    | 0.7402   | 0.7325           |
 | **Gtransformer** | 0.7028 | 0.9057    | 0.6741   | 0.6900           |
 | **GCN**        | 0.7002   | 0.9064    | 0.6438   | 0.7002           |
-| **LLM**        | 0.0669   | 0.5015    | 0.0145   | 0.0669           |
 | **Random guess**| 0.0376  | 0.0082    | 0.0076   | 0.0376           |
 
 ## Contribution & Collaboration
