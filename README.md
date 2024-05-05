@@ -2,7 +2,6 @@
     <img src="assets/title.jpg" height="300">
 </p>
 
-
 ## Overview
 
 This project presents a novel framework combining hypergraphs with large language models (LLMs) to analyze personality traits from online social networks, aiming to overcome the limitations of traditional data mining methods, and leveraging the associative capabilities of LLMs and the structural potential of hypergraphs to provide a more profound analysis of user behavior and interactions within dynamic flows, networks in digital realms.
@@ -65,7 +64,7 @@ To evaluate the effectiveness of our HGNN and LLM components, we compare their p
 
 Within the enhancement of LLMs, the overal performance achieved a higher accuracy and F1 score compared to the baseline models. The HGNN model outperformed the other models in terms of accuracy, F1 score, and AUC.
 
-### LLM Pre-processed Results
+#### LLM Pre-processed Results
 
 | Model          | Accuracy | AUC value | F1 score | F1 score (micro) |
 |----------------|----------|-----------|----------|------------------|
@@ -76,7 +75,7 @@ Within the enhancement of LLMs, the overal performance achieved a higher accurac
 | **GCN**        | 0.7030   | 0.9071    | 0.6416   | 0.7037           |
 | **Random guess**| 0.0338  | 0.0061    | 0.0069   | 0.0338           |
 
-### One-hot Index Input Results
+#### One-hot Index Input Results
 
 | Model          | Accuracy | AUC value | F1 score | F1 score (micro) |
 |----------------|----------|-----------|----------|------------------|
