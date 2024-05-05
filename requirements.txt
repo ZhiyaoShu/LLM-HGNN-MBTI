@@ -1,5 +1,4 @@
 numpy
-optuna
 torch
 matplotlib
 scikit-learn
