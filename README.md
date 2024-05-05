@@ -2,7 +2,6 @@
     <img src="assets/title.jpg" height="300">
 </p>
 
-Collaborator: [**@[sheldonresearch](https://github.com/sheldonresearch)**]
 
 ## Overview
 
@@ -89,5 +88,7 @@ Within the enhancement of LLMs, the overal performance achieved a higher accurac
 | **Random guess**| 0.0376  | 0.0082    | 0.0076   | 0.0376           |
 
 ## Contribution & Collaboration
+
+Sincerely thanks for the collaboration and advice from [**@[sheldonresearch](https://github.com/sheldonresearch)**]
 
 We encourage the community to contribute to this project. Feel free to send us feedback, suggest improvements, or submit pull requests with your innovative ideas and changes.
