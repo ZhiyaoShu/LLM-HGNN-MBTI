@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="assets/title.jpg" height="280">
+    <img src="assets/title.jpg" height="300">
 </p>
 
 Collaborator: [**@[sheldonresearch](https://github.com/sheldonresearch)**]
