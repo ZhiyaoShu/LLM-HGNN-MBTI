@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="assets/title.jpg" height="300">
+    <img src="assets/title.jpg" height="200">
 </p>
 
 ## Overview
