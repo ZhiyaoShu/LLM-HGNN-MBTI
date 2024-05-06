@@ -18,7 +18,7 @@ This project makes three significant contributions to the field:
 
 ## [Datasets](data/users_data_all.json)
 
-We collected totally **85462** users profiles from **[Personality Cafe](https://www.personalitycafe.com/)**, including the following information:
+We collected totally **85462** users profiles from **[Personality Cafe](https://www.personalitycafe.com/)**, with the following information:
 
 - Usernames
 - MBTI types
