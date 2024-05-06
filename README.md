@@ -18,7 +18,7 @@ This project makes three significant contributions to the field:
 
 ## [Datasets](data/users_data_all.json)
 
-We collected totally **85462** users profiles from **[Personality Cafe](https://www.personalitycafe.com/)**, with The dataset includes the following information:
+We collected totally **85462** users profiles from **[Personality Cafe](https://www.personalitycafe.com/)**, including the following information:
 
 - Usernames
 - MBTI types
@@ -28,7 +28,7 @@ We collected totally **85462** users profiles from **[Personality Cafe](https://
 - Sexual orientation
 - Enneagram Type
 
-We selected **17035** users with complete MBTI and Enneagram information were selected for our experiments. The dataset is available for download and can be used for research purposes.
+We selected **17035** users with complete MBTI and Enneagram information for our experiments. The dataset is available for download and can be used for your research purposes.
 
 ## Framework Components
 
