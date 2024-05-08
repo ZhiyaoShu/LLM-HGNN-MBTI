@@ -88,6 +88,4 @@ Within the enhancement of LLMs, the overal performance achieved a higher accurac
 
 ## Contribution & Collaboration
 
-Sincerely thanks for the collaboration and advice from [**@[sheldonresearch](https://github.com/sheldonresearch)**]
-
 We encourage the community to contribute to this project. Feel free to send us feedback, suggest improvements, or submit pull requests with your innovative ideas and changes.
