@@ -1,7 +1,6 @@
 import numpy as np
 import pandas as pd
 from torch_geometric.utils import index_to_mask
-from sklearn.model_selection import train_test_split
 import torch
 from sklearn.preprocessing import OneHotEncoder
 from torch_geometric.data import Data
@@ -133,18 +132,13 @@ def generate_masks(y, split=(2, 1, 1)):
     train_mask = index_to_mask(train_indices, size=total_size)
     val_mask = index_to_mask(val_indices, size=total_size)
     test_mask = index_to_mask(test_indices, size=total_size)
-    # train_mask = index_to_mask(torch.as_tensor(train_index, dtype=torch.long), size=y.shape[0])
-    # val_mask = index_to_mask(torch.as_tensor(val_index, dtype=torch.long), size=y.shape[0])
-    # test_mask = index_to_mask(torch.as_tensor(test_index, dtype=torch.long), size=y.shape[0])
 
     return train_mask, val_mask, test_mask
 
 def process():
     df = load_onehot_data()
-    # print("The number of loaded nodes:", df_mbti.shape[0])
     y_follow_label = preprocess_data(df)
     combined_df = one_hot_features(df)
-    # print("The number of total combined nodes:", combined_df.shape[0])
     node_features, edge_index, user_to_index = prepare_graph_tensors(combined_df, df)
     data = Data(x=node_features, edge_index=edge_index)
     y = y_follow_label

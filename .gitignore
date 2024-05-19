@@ -4,3 +4,4 @@ archieve/
 .env
 __pycache__/
 *.xlsx
+count.py
