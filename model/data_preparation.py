@@ -219,20 +219,8 @@ def process():
     data.val_mask = val_mask
     data.test_mask = test_mask
     data.groups = df["Groups"].tolist()
-    # print(len(data))
-    print("Total number of classes:", len(data.y.unique()))
-    # print("node features:", node_features.shape)
-    # print("edge index:", edge_index)
-    # print("y_follow_label:", y_follow_label)
-    # print(node_features.shape)
-    # print(edge_index.shape)
-    print(f"Train mask number: {torch.sum(data.train_mask)}")
-    print(f"Val mask: {torch.sum(data.val_mask)}")
-    print(f"Test mask: {torch.sum(data.test_mask)}")
-
-    with open('graph_with_embedding2.pkl', 'wb') as f:
-    # with open ('test_train_change1.pkl', 'wb') as f:
-    # with open("Enneagram_embedding.pkl", "wb") as f:
+    
+    with open('graph_with_embedding.pkl', 'wb') as f:
         pickle.dump(data, f)
     return data
 

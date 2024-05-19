@@ -60,7 +60,6 @@ def HGN():
         num_classes=16,
         use_bn=True,
     )
-    # visual = dhg.Hypergraph.draw(data.hg)
     return model, data
 
 if __name__ == "__main__":

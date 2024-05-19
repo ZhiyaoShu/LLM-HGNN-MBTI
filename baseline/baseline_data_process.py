@@ -47,9 +47,7 @@ def preprocess_data(df):
 
 def one_hot_features(df):
     df.drop(columns=['MBTI'], inplace=True)
-    # df['Username'].fillna('Unknown_User', inplace=True)
     df.fillna({'Gender': 'Unknown', 'Sexual': 'Unknown', 'Location': 'Unknown', 'Followers':'Unknown'}, inplace=True)
-    # print("After fillna:", df.isnull().sum())
 
     # One-hot encode the categorical features
     encoder = OneHotEncoder(handle_unknown='ignore')
@@ -66,7 +64,6 @@ def one_hot_features(df):
     columns_to_keep = ['Username'] + numeric_columns
     combined_df = pd.concat([df[columns_to_keep].reset_index(drop=True), one_hot_df, about_tfidf_df], axis=1)
     
-    # print(one_hot_df.shape, about_tfidf_df.shape, combined_df.shape)
     return combined_df
 
 def prepare_graph_tensors(combined_df, df):
@@ -116,7 +113,7 @@ def prepare_graph_tensors(combined_df, df):
     return node_features, edge_index, user_to_index
 
 def generate_masks(y, split=(2, 1, 1)):
-    total_size = y.shape[0]  # Ensure this reflects the total dataset size
+    total_size = y.shape[0] 
     train_size, val_size, test_size = split
 
     # Generate indices for training, validation, and testing
@@ -154,8 +151,7 @@ def process():
     data.test_mask = test_mask
     data.groups = df['Groups'].tolist()
     
-    # print("the number of total nodes for mask", data.x.shape[0])
-    with open('baseline_data1.pkl', 'wb') as f:
+    with open('baseline_data.pkl', 'wb') as f:
         pickle.dump(data, f)
         
     return data

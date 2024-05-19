@@ -1,12 +1,11 @@
 
 import numpy as np
 import torch
-import torch.nn as nn
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 import torch.nn.functional as F
 from util.model_config import seed_setting
 import torchmetrics
-# from baseline.GCN import GCN
+from baseline.GCN import GCN
 from baseline.GAT import GAT
 from baseline.G_transformer import GCNCT
 import copy
@@ -105,7 +104,6 @@ def main_training_loop(model, data):
         return test_acc, test_precision, test_recall, test_f1, micro_precision, micro_recall, micro_f1
     
     best_val_loss = float('inf')
-    # early_stopping = EarlyStopping(patience=10, verbose=True)
     best_model_state = None
     
     # Train and print the best model
@@ -121,12 +119,8 @@ def main_training_loop(model, data):
         print(f"Epoch: {epoch}, Train Loss: {train_loss:.4f}")
         if epoch%10 == 0:        
             print(f"Epoch: {epoch}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
-        # early_stopping(val_loss, model)
     if best_model_state:
         model.load_state_dict(best_model_state)
-        # if early_stopping.early_stop:
-        #     print("Early stopping")
-        #     break
         
     test_acc, test_precision, test_recall, test_f1, micro_precision, micro_recall, micro_f1 = test(model, data)
     print(f'Test Metrics - Accuracy: {test_acc:.4f}, Precision (Macro): {test_precision:.4f}, Recall (Macro): {test_recall:.4f}, F1 Score (Macro): {test_f1:.4f}')

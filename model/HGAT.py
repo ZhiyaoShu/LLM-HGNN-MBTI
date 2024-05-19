@@ -11,7 +11,7 @@ from Hyperedges import get_dhg_hyperedges, custom_hyperedges
 from dhg.structure.hypergraphs import Hypergraph
 from dhg.nn import UniGATConv
 
-class UniGATConv(nn.Module):
+class HyperGAT(nn.Module):
     r"""The UniGAT convolution layer proposed in `UniGNN: a Unified Framework for Graph and Hypergraph Neural Networks <https://arxiv.org/pdf/2105.00956.pdf>`_ paper (IJCAI 2021).
 
     Sparse Format:
@@ -64,14 +64,10 @@ class UniGATConv(nn.Module):
         """
         X = self.theta(X)
         Y = hg.v2e(X, aggr="mean")
-        # ===============================================
         alpha_e = self.atten_e(Y)
         e_atten_score = alpha_e[hg.e2v_src]
         e_atten_score = self.atten_dropout(self.atten_act(e_atten_score).squeeze())
-        # ================================================================================
-        # We suggest to add a clamp on attention weight to avoid Nan error in training.
         e_atten_score = torch.clamp(e_atten_score, min=0.001, max=5)
-        # ================================================================================
         X = hg.e2v(Y, aggr="softmax_then_sum", e2v_weight=e_atten_score)
 
         if not self.is_last:
@@ -87,7 +83,7 @@ def HGAT():
     data = custom_hyperedges(data, df)
     data = normalize_features(data)
     node_features = data.x
-    model = UniGATConv(
+    model = HyperGAT(
         in_channels=node_features.shape[1],
         hid_channels=300,
         out_channels=16,
@@ -95,7 +91,6 @@ def HGAT():
     )
 
     return model, data
-
 
 if __name__ == "__main__":
     HGAT()

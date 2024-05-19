@@ -30,18 +30,13 @@ class HGNNP(nn.Module):
         num_classes: int,
         use_bn: bool = False,
         drop_rate: float = 0.5,
-        # use_skip_connections=False,
     ) -> None:
         super().__init__()
-        # self.use_skip_connections = use_skip_connections
         self.layers = nn.ModuleList()
         self.skip_layers = nn.ModuleList()
         self.layers.append(
             HGNNPConv(in_channels, hid_channels, use_bn=use_bn, drop_rate=drop_rate)
         )
-        # # add a linear layer to match the dimensions
-        # if self.use_skip_connections:
-        #     self.skip_layers.append(nn.Linear(in_channels, hid_channels))
 
         self.layers.append(
             HGNNPConv(hid_channels, hid_channels, use_bn=use_bn, is_last=True)
@@ -54,10 +49,6 @@ class HGNNP(nn.Module):
             X = layer(X, hg)
         
         return X
-    
-        # # add a linear layer to match the dimensions
-        # if self.use_skip_connections and in_channels != num_classes:
-        #     self.skip_layers.append(nn.Linear(hid_channels, num_classes))
 
     def forward(self, X: torch.Tensor, hg: "dhg.Hypergraph") -> torch.Tensor:
         r"""The forward function.
@@ -72,11 +63,8 @@ class HGNNP(nn.Module):
 
 
 def HGNP():
-    # data = pickle.load(open("baseline_data2.pkl", "rb"))
-    # data = pickle.load(open("graph_with_embedding2.pkl", "rb"))
-    data = pickle.load(open("Enneagram_embedding.pkl", "rb"))
+    data = pickle.load(open("graph_with_embedding.pkl", "rb"))
     df, _ = load_data()
-    # data = custom_hyperedges(data, df)
     data = get_dhg_hyperedges(data, df)
     data = normalize_features(data)
     node_features = data.x

@@ -50,13 +50,11 @@ class HyperGCN(nn.Module):
                 drop_rate=drop_rate,
             )
         )
-        # self.skip_layers.append(nn.Identity())
         self.layers.append(
             HyperGCNConv(
                 hid_channels, num_classes, use_mediator, use_bn=use_bn, is_last=True
             )
         )
-        # self.skip_layers.append(nn.Linear(hid_channels, num_classes))
 
     def forward(self, X: torch.Tensor, hg: "dhg.Hypergraph") -> torch.Tensor:
         r"""The forward function.
@@ -77,18 +75,15 @@ class HyperGCN(nn.Module):
                 X = layer(X, hg)
                 
 def HGCN():
-    # data = pickle.load(open("graph_data.pkl", "rb"))
-    # data = pickle.load(open("graph_with_embedding2.pkl", "rb"))
-    data = pickle.load(open("Enneagram_embedding.pkl", "rb"))
+    data = pickle.load(open("graph_with_embedding.pkl", "rb"))
     df, _ = load_data()
-    # data = custom_hyperedges(data, df)
     data = get_dhg_hyperedges(data, df)
     data = normalize_features(data)
     node_features = data.x
     model = HyperGCN(
         in_channels=node_features.shape[1],
         hid_channels=300,
-        num_classes=17,
+        num_classes=16,
         use_bn=True,
     )
 
