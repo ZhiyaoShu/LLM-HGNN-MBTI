@@ -11,57 +11,6 @@ from Hyperedges import get_dhg_hyperedges, custom_hyperedges
 from dhg.structure.hypergraphs import Hypergraph
 from dhg.nn import UniGATConv
 
-# class HGATConv(nn.Module):
-#     r"""The HGNN model proposed in `Hypergraph Neural Networks <https://arxiv.org/pdf/1809.09401>`_ paper (AAAI 2019).
-
-#     Args:
-#         ``in_channels`` (``int``): :math:`C_{in}` is the number of input channels.
-#         ``hid_channels`` (``int``): :math:`C_{hid}` is the number of hidden channels.
-#         ``num_classes`` (``int``): The Number of class of the classification task.
-#         ``use_bn`` (``bool``): If set to ``True``, use batch normalization. Defaults to ``False``.
-#         ``drop_rate`` (``float``, optional): Dropout ratio. Defaults to 0.5.
-#     """
-
-#     def __init__(
-#         self,
-#         in_channels: int,
-#         hid_channels: int,
-#         num_classes: int,
-#         use_bn: bool = False,
-#         drop_rate: float = 0.5,
-#     ) -> None:
-#         super().__init__()
-
-#         self.layers = nn.ModuleList()
-#         self.node_encoder = Linear(in_channels, hid_channels)
-#         for i in range(1, num_classes + 1):
-#             self.layers.append(
-#                 HGNNPConv(in_channels, hid_channels, use_bn=use_bn, drop_rate=drop_rate)
-#             )
-#             self.norm = LayerNorm(hid_channels, elementwise_affine=True)
-
-#             self.act = ReLU(inplace=True)
-            
-#             self.layers.append(
-                
-#                 UniGATConv(hid_channels, in_channels, use_bn=use_bn, is_last=True),
-#             )
-
-#         self.lin = Linear(hid_channels, num_classes)
-#         print("hidde channels", hid_channels, "num_classes", num_classes, "in_channels", in_channels, self.layers, self.lin)
-
-#     def forward(self, X: torch.Tensor, hg: "dhg.Hypergraph") -> torch.Tensor:
-#         r"""The forward function.
-
-#         Args:
-#             ``X`` (``torch.Tensor``): Input vertex feature matrix. Size :math:`(N, C_{in})`.
-#             ``hg`` (``dhg.Hypergraph``): The hypergraph structure that contains :math:`N` vertices.
-#         """
-#         for layer in self.layers:
-#             X = layer(X, hg)
-#         return X
-
-
 class UniGATConv(nn.Module):
     r"""The UniGAT convolution layer proposed in `UniGNN: a Unified Framework for Graph and Hypergraph Neural Networks <https://arxiv.org/pdf/2105.00956.pdf>`_ paper (IJCAI 2021).
 
@@ -133,7 +82,6 @@ class UniGATConv(nn.Module):
 
 
 def HGAT():
-    # data = pickle.load(open("graph_data.pkl", "rb"))
     data = pickle.load(open("graph_with_embedding.pkl", "rb"))
     df, _ = load_data()
     data = custom_hyperedges(data, df)
@@ -142,7 +90,7 @@ def HGAT():
     model = UniGATConv(
         in_channels=node_features.shape[1],
         hid_channels=300,
-        out_channels=17,
+        out_channels=16,
         use_bn=True,
     )
 

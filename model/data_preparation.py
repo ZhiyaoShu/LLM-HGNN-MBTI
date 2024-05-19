@@ -17,13 +17,13 @@ def fill_na_with_mean(df):
 def load_data():
     # Load merged data
     df = pd.read_csv("data/user_data_cleaned.csv")
-    df_mbti = pd.read_csv("data/updated_merge_new_df_2.csv")
     # Load embeddings
     embeddings_df = pd.read_json("data/embeddings2.json")
     df = fill_na_with_mean(df)
     return df, embeddings_df
 
 def preprocess_data(df_mbti):
+    df_mbti = pd.read_csv("data/updated_merge_new_df_2.csv")
     # Encoding MBTI to binary and numerical representation
     # def encode_mbti(mbti):
     #     encoding = {
@@ -239,31 +239,3 @@ def process():
 
 if __name__ == "__main__":
     process()
-
-# def check_and_clean_data(data):
-# # Check and clean x (features)
-#     if torch.isnan(data.x).any() or torch.isinf(data.x).any():
-#         # Replace NaNs with the mean of the column (or consider removing them)
-#         mean_values = torch.nanmean(data.x, dim=0)
-#         data.x = torch.nan_to_num(data.x, nan=mean_values)
-
-# # Check and clean y (targets)
-# if torch.isnan(data.y).any() or torch.isinf(data.y).any():
-#     # It's usually better to remove rows with NaN in targets
-#     valid_indices = ~torch.isnan(data.y) & ~torch.isinf(data.y)
-#     data.x = data.x[valid_indices]
-#     data.y = data.y[valid_indices]
-# data = check_and_clean_data(data)
-
-# # Range of K to try
-# k_values = range(12, 49)
-# silhouette_scores = []
-
-# for k in k_values:
-#     kmeans = KMeans(n_clusters=k, random_state=42).fit(node_features_np)
-#     score = silhouette_score(node_features_np, kmeans.labels_)
-#     silhouette_scores.append(score)
-
-# # Find the optimal K
-# optimal_k = k_values[silhouette_scores.index(max(silhouette_scores))]
-# print(f"Optimal number of clusters: {optimal_k}, Silhouette Score={max(silhouette_scores)}")
