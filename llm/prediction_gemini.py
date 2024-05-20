@@ -2,11 +2,54 @@ from openai import OpenAI
 from dotenv import load_dotenv
 import os
 import json
-import tiktoken
 from tqdm import tqdm
 import time
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
+import logging
+from dotenv import load_dotenv
 
-def query_gemini(prompt):
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+tokenizer = AutoTokenizer.from_pretrained("google/gemma-7b")
+model = AutoModelForCausalLM.from_pretrained("google/gemma-7b")
+
+MODEL_NAME_LLAMA = "meta-llama/Llama-2-7b-chat-hf"
+
+MODEL_NAME_OPENAI = "gpt-3.5-turbo-0125"
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+client_openai = OpenAI(api_key=OPENAI_API_KEY)
+
+def query_openai(prompt, model_name=MODEL_NAME_OPENAI):
+    """
+    Queries the OpenAI API with the given prompt using the specified model.
+
+    :param prompt: Prompt to query the API with.
+    :param model_name: Name of the model to use for the query.
+
+    :return: Response from the API.
+    """
+    try:
+        messages = [
+            {"role": "system", "content": "You are a text summarization expert."},
+            {"role": "user", "content": prompt},
+        ]
+        response = client_openai.chat.completions.create(
+            model=model_name, messages=messages
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        logger.error(f"Failed to query OpenAI API with model {model_name}: {str(e)}")
+        if model_name != MODEL_NAME_OPENAI:  # Check if the model is not already GPT-3.5
+            logger.info("Attempting to query using GPT-3.5 as a fallback.")
+            return query_openai(prompt, MODEL_NAME_OPENAI)  # Attempt with GPT-3.5
+        else:
+            logger.info(
+                "This iteration fails and will return None."
+            )  # Log when returning None for GPT-3.5
+            return None
+
+def query_llama(prompt):
     """
     Queries the LLAMA model API with a given prompt.
 
@@ -15,44 +58,50 @@ def query_gemini(prompt):
     :return: The model's response as a string, or None if an error occurs.
     """
     try:
+        device_map = {"": 0}
+        # Load LLaMA tokenizer
+        tokenizer = AutoTokenizer.from_pretrained(
+            MODEL_NAME_LLAMA, trust_remote_code=True
+        )
+        tokenizer.pad_token = tokenizer.eos_token
+        tokenizer.padding_side = "right"
 
-        input_ids = tokenizer.encode(prompt, return_tensors="pt")
-        output = pipe(input_ids)
-        generated_text = tokenizer.decode(output[0])
+        model = AutoModelForCausalLM.from_pretrained(
+            MODEL_NAME_LLAMA, device_map=device_map
+        )
 
-        return generated_text
+        pipe = pipeline(
+            task="text-generation",
+            model=model,
+            tokenizer=tokenizer,
+            max_length=200,
+            device_map=device_map,
+        )
+
+        result = pipe(f"<s>[INST] {prompt} [/INST]")
+
+        return result
 
     except Exception as e:
         logger.error(f"Failed to query LLAMA API: {str(e)}")
         return None
 
-
-def query_gemini(prompt, model_name=MODEL_NAME_GEMINI):
+def query_gemma(prompt):
     """
-    Queries the GEMINI model API with a given prompt.
+    Queries the GEMMA model with the given prompt.
 
-    :param prompt: The prompt to send to the GEMINI API.
-    :param model_name: The GEMINI model to use.
+    :param prompt: The prompt to send to the GEMMA model.
     :return: The model's response as a string, or None if an error occurs.
     """
     try:
-        messages = [
-            {"role": "model", "parts": prompt},
-        ]
-        model = genai.GenerativeModel(model_name)
-        response = model.generate_content(
-            messages,
-            generation_config=genai.types.GenerationConfig(
-                stop_sequences=["x"],
-                max_output_tokens=20,
-                temperature=1.0,
-            ),
-        )
-        return response["text"]
+        inputs = tokenizer(prompt, return_tensors="pt", padding=True, truncation=True)
+        outputs = model.generate(**inputs)
+        response = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        return response
     except Exception as e:
-        logger.error(f"Failed to query GEMINI API with model {model_name}: {str(e)}")
+        logger.error(f"Failed to query GEMMA model: {str(e)}")
         return None
-
+    
 INSTRUCTION = """
 Your task is to analyze user descriptions from user profiles, presented in the following JSON format:
 {
@@ -128,7 +177,9 @@ def generate_and_save_results(file_path):
     :param file_path: Path to the JSON file containing user descriptions.
     """
     model_functions = {
-        'gemini': query_gemini,
+        'openai': query_openai,
+        'llama': query_llama,
+        'gemma': query_gemma
     }
 
     for model_name in tqdm(model_functions.keys(), desc="Processing models"):

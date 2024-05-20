@@ -6,7 +6,7 @@
 
 This project presents a novel framework combining hypergraphs with large language models (LLMs) to analyze personality traits from online social networks, aiming to overcome the limitations of traditional data mining methods, and leveraging the associative capabilities of LLMs and the structural potential of hypergraphs to provide a more profound analysis of user behavior and interactions within dynamic flows, networks in digital realms.
 
-![Image](assets/main_model.png)
+![Image](assets/framework3_00.jpg)
 
 ### Key Contributions
 
