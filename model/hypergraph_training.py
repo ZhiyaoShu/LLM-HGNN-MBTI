@@ -9,7 +9,7 @@ import torch.nn as nn
 from HGCN import HGCN
 from HGNNP import HGNP
 from model.HGNN import HGN
-from HGAT import HyperGAT
+from HGAT import HGAT
 from util.model_config import seed_setting
 
 import copy
@@ -214,10 +214,8 @@ def main_training_loop(model, data):
 
 
 def final_train():
-    # model, data = HGNP()
+    # Replace with HGNP() and HGAT() for Hypergraph Convolutional Network
     model, data = HGN()
-    # model, data = DHGNNP()
-    # model, data = HGCN()
     main_training_loop(model, data)
 
 

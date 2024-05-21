@@ -22,24 +22,10 @@ def load_data():
     df = fill_na_with_mean(df)
     return df, embeddings_df
 
-def preprocess_data(df_mbti):
-    df_mbti = pd.read_csv("data/updated_merge_new_df_2.csv")
-    # Encoding MBTI to binary and numerical representation
-    # def encode_mbti(mbti):
-    #     encoding = {
-    #         'I': '0', 'E': '1',
-    #         'N': '0', 'S': '1',
-    #         'T': '0', 'F': '1',
-    #         'J': '0', 'P': '1',
-    #     }
-    #     default_encoding = [-1, -1, -1, -1]
-    #     # Check if mbti is unknown or NaN
-    #     if mbti in ['Unknown', 'nan', None] or pd.isna(mbti):
-    #         return default_encoding
-    #     encoded = [int(encoding.get(char, -1)) for char in mbti]
-
-    #     return encoded if len(encoded) == 4 else default_encoding
-
+def process_data_mbti(df_personality):
+    df_personality = pd.read_csv("data/updated_merge_new_df_2.csv")
+    
+    # Encode MBTI types
     def encode_mbti_number(mbti):
         mbti_to_number = {
             "INTJ": 0,
@@ -62,38 +48,41 @@ def preprocess_data(df_mbti):
         return mbti_to_number[mbti]
 
     # Apply encoding
-    df_mbti.loc[:, "Label"] = df_mbti["MBTI"].apply(encode_mbti_number)
+    df_personality.loc[:, "Label"] = df_personality["MBTI"].apply(encode_mbti_number)
     # Prepare class and label methods
     y_follow_label = torch.tensor(
-        df_mbti.loc[:, "Label"].values, dtype=torch.long
+        df_personality.loc[:, "Label"].values, dtype=torch.long
     ).unsqueeze(1)
-    # Get the enneagram types from existed dataset
-    # enneagram = df["EnneagramType"].unique()
-    # print(f"Enneagram types: {enneagram}")
-    # def enneagramType(enneagram):
-    #     enneagram_to_number = {
-    #         "Type 1": 0,
-    #         "Type 2": 1,
-    #         "Type 3": 2,
-    #         "Type 4": 3,
-    #         "Type 5": 4,
-    #         "Type 6": 5,
-    #         "Type 7": 6,
-    #         "Type 8": 7,
-    #         "Type 9": 8,
-    #     }
-    #     if enneagram in ["Unknown", "nan", None] or pd.isna(enneagram):
-    #         return 9
-    #     enneagram = enneagram.split("w")[0].strip()
-    #     return enneagram_to_number.get(enneagram)
-
-    # df.loc[:, "Label"] = df["EnneagramType"].apply(enneagramType)
-    # print(df["Label"])
-    # y_follow_label = torch.tensor(
-    #     df.loc[:, "Label"].values, dtype=torch.long
-    # ).unsqueeze(1)
+    
     return y_follow_label
 
+# Get the enneagram types from existed dataset
+def process_data_ennagram(df):
+    enneagram = df["EnneagramType"].unique()
+    print(f"Enneagram types: {enneagram}")
+    def enneagramType(enneagram):
+        enneagram_to_number = {
+            "Type 1": 0,
+            "Type 2": 1,
+            "Type 3": 2,
+            "Type 4": 3,
+            "Type 5": 4,
+            "Type 6": 5,
+            "Type 7": 6,
+            "Type 8": 7,
+            "Type 9": 8,
+        }
+        if enneagram in ["Unknown", "nan", None] or pd.isna(enneagram):
+            return 9
+        enneagram = enneagram.split("w")[0].strip()
+        return enneagram_to_number.get(enneagram)
+
+    df.loc[:, "Label"] = df["EnneagramType"].apply(enneagramType)
+    print(df["Label"])
+    y_follow_label = torch.tensor(
+        df.loc[:, "Label"].values, dtype=torch.long
+    ).unsqueeze(1)
+    return y_follow_label
 
 def one_hot_features(df, embeddings_df):
     df.fillna(
@@ -101,6 +90,7 @@ def one_hot_features(df, embeddings_df):
         inplace=True,
     )
     df = fill_na_with_mean(df)
+    
     # One-hot encode the categorical features
     encoder = OneHotEncoder(handle_unknown="ignore")
     one_hot_encoded = encoder.fit_transform(
@@ -129,7 +119,6 @@ def one_hot_features(df, embeddings_df):
 
 
 def prepare_graph_tensors(combined_df, df):
-    # Convert 'Follower' and 'Groups' columns from string to list
     df['Follower'] = df['Follower'].fillna('[]').apply(ast.literal_eval)
     if combined_df.isnull().any().any():
         combined_df.fillna(0, inplace=True)
@@ -145,7 +134,6 @@ def prepare_graph_tensors(combined_df, df):
 
     for _, row in df.iterrows():
         user = row["Username"]
-        # groups = row['Groups']
 
         # Add edges for followers
         followed = row["Follower"]
@@ -162,7 +150,7 @@ def prepare_graph_tensors(combined_df, df):
 
 # Create train, test, validate masks
 def generate_masks(y, split=(2, 1, 1)):
-    total_size = y.shape[0]  # Ensure this reflects the total dataset size
+    total_size = y.shape[0]  
     train_size, val_size, test_size = split
 
     # Generate indices for training, validation, and testing
@@ -186,8 +174,9 @@ def generate_masks(y, split=(2, 1, 1)):
 
 def process():
     df, embeddings_df = load_data()
-    # Unpack the tuple returned by preprocess_data
-    y_follow_label = preprocess_data(df)
+    
+    # Replace with process_data_ennagram(df) for enneagram labels
+    y_follow_label = process_data_mbti(df)
 
     combined_df = one_hot_features(df, embeddings_df)
 
@@ -199,17 +188,12 @@ def process():
     check_for_nans(edge_index, "Edge Index")
     
     data = Data(x=node_features, edge_index=edge_index)
-    
-    # data.y = y.float()
-    # data.y = torch.argmax(y, dim=1)
 
-    # Correctly use y_follow_label tensor, ensuring it's a float tensor
     data.y = y_follow_label.float()
-
 
     train_mask, val_mask, test_mask = generate_masks(
         y_follow_label.squeeze()
-    )  # Remove unnecessary dimension
+    )  
 
     data.edge_index = edge_index
     data.node_features = node_features

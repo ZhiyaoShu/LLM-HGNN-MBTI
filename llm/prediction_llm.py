@@ -3,10 +3,8 @@ from dotenv import load_dotenv
 import os
 import json
 from tqdm import tqdm
-import time
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 import logging
-from dotenv import load_dotenv
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

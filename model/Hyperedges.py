@@ -1,17 +1,6 @@
 import torch
-import torch.nn as nn
 import dhg
-import pickle
-from dhg.nn import HyperGCNConv
-from dhg.structure.graphs import Graph
-from dhg.structure.hypergraphs import Hypergraph
-import numpy as np
-from torch_sparse import SparseTensor
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import ast
-from sklearn.cluster import KMeans
-from torch import nn, optim
-from model.data_preparation import load_data
 
 
 # Define the self loop removal function
@@ -26,15 +15,17 @@ def get_dhg_hyperedges(data, df):
     if not torch.isfinite(data.x).all():
         print("Non-finite values found in data.x, applying fill strategy...")
         data.x[~torch.isfinite(data.x)] = 0
+        
     # Define the hyperedges based on data
     edge_index = data.edge_index
     edge_index_no_self_loops = remove_self_loops(edge_index)
-    print("Edge index shape:", edge_index_no_self_loops.shape)
+
     # Create a graph from the edge index
     _g = dhg.Graph(
         data.x.size(0), edge_index_no_self_loops.t().tolist(), merge_op="mean"
     )
     print("Graph:", _g)
+    
     # Add nodes into the hypergraph
     hg = dhg.Hypergraph(data.x.size(0))
 
