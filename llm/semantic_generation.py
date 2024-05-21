@@ -32,11 +32,12 @@ token_limitation_dict = {
 }
 
 INSTRUCTION = """
-Generate a descriptive paragraph about each user's persona. The description should focus on personal traits and participation in groups, with references to demographic details such as relationship status, gender, location, or sexual orientation. Format the result as a plain JSON object, ensuring that the output is concise and clear of any additional formatting like newline characters or escape sequences. Example output:
-
-{
-   "Username, known for their unique perspective on life and participation in varied interest groups, exhibits a creative and dynamic personality in their social interactions."
-}
+Task: Generate a descriptive paragraph about the given user’s persona.
+Demand: 
+#1. For some unknown attributes, you should try to complete them with your knowledge. 
+#2. Your description of this user should focus on personal traits, with references to demographic details given below. 
+#3. Make the description concise and brief.
+User Records:
 """
 def batch_data(dataframe, num_batches):
     return np.array_split(dataframe, num_batches)
