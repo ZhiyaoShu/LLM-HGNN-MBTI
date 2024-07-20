@@ -1,11 +1,11 @@
 import random
 import numpy as np
 import torch
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import torch.nn as nn
 import logging
 import os
 import multiprocessing
+
 
 # Random seeds
 def seed_setting(seed=42):
@@ -13,35 +13,7 @@ def seed_setting(seed=42):
     np.random.seed(seed)
     torch.manual_seed(seed)
 
-# Feature normalization
-
-
-def check_data_distribution(data):
-    """
-    Check the distribution of the features in the data.
-    """
-    from scipy.stats import shapiro
-
-    sample = data.x[np.random.choice(
-        data.x.size(0), 1000, replace=False)].numpy()
-
-    stat, p = shapiro(sample)
-    return "normal" if p > 0.05 else "non-normal"
-
-
-def normalize_features(data):
-    """
-    Normalize the node features based on their distribution.
-    """
-    distribution = check_data_distribution(data)
-    scaler = StandardScaler() if distribution == "normal" else MinMaxScaler()
-    data.x = torch.tensor(scaler.fit_transform(
-        data.x.numpy()), dtype=torch.float)
-    return data
-
 # Weight loss functions
-
-
 def weighted_cross_entropy(output, target, weights):
     tensor_weights = torch.tensor(
         weights, dtype=torch.float, device=output.device)
@@ -68,14 +40,12 @@ mbti_to_number = {
     "ISFP": 14,
     "ESFP": 15,
 }
-
 weights[mbti_to_number["INFP"] - 1] = 0.80
 weights[mbti_to_number["INFJ"] - 1] = 0.78
 weights[mbti_to_number["INTP"] - 1] = 0.78
 
+
 # Set up ouput directory
-
-
 def setup_logging(output_folder, console="debug"):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -91,9 +61,8 @@ def setup_logging(output_folder, console="debug"):
         ]
     )
 
+
 # Check if GPU is available
-
-
 def gpu_config():
     if torch.cuda.is_available():
         device = torch.device("cuda")

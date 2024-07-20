@@ -2,7 +2,6 @@ import torch
 import dhg
 import ast
 
-
 # Define the self loop removal function
 def remove_self_loops(edge_index: torch.Tensor) -> torch.Tensor:
     mask = edge_index[0] != edge_index[1]

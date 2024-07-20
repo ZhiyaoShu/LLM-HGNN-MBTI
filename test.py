@@ -1,13 +1,20 @@
 import torch
 from tqdm import tqdm
-from model_hypergraph.utils import seed_setting
 from train import random_guess_baseline
 from sklearn.metrics import f1_score, accuracy_score
 import torchmetrics
-import argparse
+import parse
 import logging
+import datetime
 
 def test(model, data):
+    # Load best model
+    args = parse.parse_arguments()
+    time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    output_folder = f"logs/{args.save_dir}/{time}"
+    model.load_state_dict(torch.load(f"{output_folder}/best_model_{time}.pth"))
+    
+    # Test the model
     model.eval()
     
     with torch.no_grad():
@@ -25,10 +32,9 @@ def test(model, data):
     y_true_flat = y_true.ravel()
     y_pred_flat = y_pred.ravel()
 
-    auroc = torchmetrics.AUROC(num_classes=16, task="multiclass")
+    auroc = torchmetrics.AUROC(num_classes=args, task="multiclass")
     auc_score = auroc(pred[data.test_mask], target)
     auc_score = auroc.compute()
-    logging.info(f"AUC Score: {auc_score}")
 
     # Micro metrics
     micro_f1 = f1_score(y_true_flat, y_pred_flat, average="micro")
@@ -36,9 +42,17 @@ def test(model, data):
     # Macro metrics
     test_f1 = f1_score(y_true_flat, y_pred_flat, average="macro")
     test_acc = accuracy_score(y_true_flat, y_pred_flat)
-
-    return (
-        test_acc,
-        test_f1,
-        micro_f1,
+    logging.info(
+        f"""Test Metrics 
+                    Accuracy: {test_acc:.4f},
+                    AUC Score: {auc_score}, 
+                    F1 Score (Macro): {test_f1:.4f},
+                    Micro F1 Score: {micro_f1:.4f}
+            """
     )
+    rand_acc, rand_prec, rand_rec, rand_f1 = random_guess_baseline(y_true)
+    logging.info(
+        f"Random Guess Metrics - Accuracy: {rand_acc:.4f}, Precision: {rand_prec:.4f}, Recall: {rand_rec:.4f}, F1 Score: {rand_f1:.4f}"
+    )
+
+    return test_acc, test_f1, micro_f1, auc_score

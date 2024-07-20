@@ -2,11 +2,6 @@ import torch
 import torch.nn as nn
 import dhg
 from dhg.nn import HGNNConv
-import pickle
-
-from model_hypergraph.utils import normalize_features
-from dataloader.data_preparation import load_data
-from model_hypergraph.Hyperedges import get_dhg_hyperedges
 
 class HGNN(nn.Module):
     r"""The HGNN model proposed in `Hypergraph Neural Networks <https://arxiv.org/pdf/1809.09401>`_ paper (AAAI 2019).
@@ -47,20 +42,3 @@ class HGNN(nn.Module):
             X = layer(X, hg)
             
         return X
-
-def HGN():
-    data = pickle.load(open("graph_with_embedding.pkl", "rb"))
-    df, _ = load_data()
-    data = get_dhg_hyperedges(data, df)
-    data = normalize_features(data)
-    node_features = data.x
-    model = HGNN(
-        in_channels=node_features.shape[1],
-        hid_channels=300,
-        num_classes=16,
-        use_bn=True,
-    )
-    return model, data
-
-if __name__ == "__main__":
-    HGN()

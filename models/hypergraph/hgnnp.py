@@ -1,16 +1,8 @@
 import torch
 import torch.nn as nn
 import dhg
-from dhg.nn import HGNNConv
-import pickle
 from dhg.nn import HGNNPConv
-from torch.nn import Linear, LayerNorm, ReLU, Sequential
-from model_hypergraph.utils import normalize_features
-from dataloader.data_preparation import load_data
-from Hyperedges import get_dhg_hyperedges, custom_hyperedges
-
-# from torch_geometric.nn import DeepGCNLayer
-
+from torch.nn import Linear
 
 class HGNNP(nn.Module):
     r"""The HGNN :sup:`+` model proposed in `HGNN+: General Hypergraph Neural Networks <https://ieeexplore.ieee.org/document/9795251>`_ paper (IEEE T-PAMI 2022).
@@ -62,21 +54,3 @@ class HGNNP(nn.Module):
         return X
 
 
-def HGNP():
-    data = pickle.load(open("graph_with_embedding.pkl", "rb"))
-    df, _ = load_data()
-    data = get_dhg_hyperedges(data, df)
-    data = normalize_features(data)
-    node_features = data.x
-    model = HGNNP(
-        in_channels=node_features.shape[1],
-        hid_channels=300,
-        num_classes=17,
-        use_bn=True,
-    )
-
-    return model, data
-
-
-if __name__ == "__main__":
-    HGNP()
