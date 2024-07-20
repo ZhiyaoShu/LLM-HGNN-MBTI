@@ -21,3 +21,4 @@ openai
 torch-geometric
 torch_sparse
 torch_scatter
+tqdm

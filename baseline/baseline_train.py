@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 import torch.nn.functional as F
-from util.model_config import seed_setting
+from model_hypergraph.utils import seed_setting
 import torchmetrics
 from baseline.GCN import GCN
 from baseline.GAT import GAT

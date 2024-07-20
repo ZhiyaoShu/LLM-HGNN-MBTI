@@ -39,6 +39,7 @@ Demand:
 #3. Make the description concise and brief.
 User Records:
 """
+
 def batch_data(dataframe, num_batches):
     return np.array_split(dataframe, num_batches)
 
