@@ -8,10 +8,11 @@ from torch_geometric.data import Data
 from sklearn.feature_extraction.text import TfidfVectorizer
 import ast
 import pickle
-import argparse
+import parse
 
 from personality_loader import y_enngram, y_mbti
 
+args = parse.parse_arguments()
 
 def fill_na_with_mean(df):
     for column in df.select_dtypes(include=[np.number]):
@@ -124,11 +125,14 @@ def generate_masks(y, split=(2, 1, 1)):
     return train_mask, val_mask, test_mask
 
 
-def process():
+def process(args):
     df, embeddings_df = load_data()
 
-    # Replace with process_data_ennagram(df) for enneagram labels
-    y_follow_label = process_data_mbti(df)
+    # Determine the type of personality labels to use
+    if args.mbti:
+        y_follow_label = y_mbti(df)
+    else:
+        y_follow_label = y_enngram(df)
 
     combined_df = one_hot_features(df, embeddings_df)
 
@@ -158,7 +162,7 @@ def process():
     data.test_mask = test_mask
     data.groups = df["Groups"].tolist()
 
-    with open('graph_with_embedding.pkl', 'wb') as f:
+    with open('Data_features.pkl', 'wb') as f:
         pickle.dump(data, f)
     return data
 
