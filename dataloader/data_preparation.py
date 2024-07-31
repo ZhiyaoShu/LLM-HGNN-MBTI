@@ -130,9 +130,9 @@ def process(args):
 
     # Determine the type of personality labels to use
     if args.mbti:
-        y_follow_label = y_mbti(df)
+        y = y_mbti(df)
     else:
-        y_follow_label = y_enngram(df)
+        y = y_enngram(df)
 
     combined_df = one_hot_features(df, embeddings_df)
 
@@ -147,10 +147,10 @@ def process(args):
 
     data = Data(x=node_features, edge_index=edge_index)
 
-    data.y = y_follow_label.float()
+    data.y = y.float()
 
     train_mask, val_mask, test_mask = generate_masks(
-        y_follow_label.squeeze()
+        y.squeeze()
     )
 
     data.edge_index = edge_index
@@ -162,7 +162,7 @@ def process(args):
     data.test_mask = test_mask
     data.groups = df["Groups"].tolist()
 
-    with open('Data_features.pkl', 'wb') as f:
+    with open('data_features.pkl', 'wb') as f:
         pickle.dump(data, f)
     return data
 
