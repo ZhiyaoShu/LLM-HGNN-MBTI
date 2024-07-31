@@ -3,7 +3,7 @@ import torch
 import logging
 
 # Load MBTI
-df_personality = pd.read_csv("data/user_data.csv")
+df_personality = pd.read_csv("dataset/users_data_small.csv")
 
 # Encode MBTI types
 def encode_mbti_number(mbti):

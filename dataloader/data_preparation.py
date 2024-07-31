@@ -8,11 +8,15 @@ from torch_geometric.data import Data
 from sklearn.feature_extraction.text import TfidfVectorizer
 import ast
 import pickle
-import parse
+import parse_arg
+import sys
+import os
 
-from personality_loader import y_enngram, y_mbti
+from dataloader.personality_loader import y_enngram, y_mbti
 
-args = parse.parse_arguments()
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+args = parse_arg.parse_arguments()
 
 def fill_na_with_mean(df):
     for column in df.select_dtypes(include=[np.number]):
@@ -21,9 +25,9 @@ def fill_na_with_mean(df):
 
 def load_data():
     # Load merged data
-    df = pd.read_csv("data/user_data_cleaned.csv")
+    df = pd.read_csv("dataset/users_data_small.csv", encoding="utf-8")
     # Load embeddings
-    embeddings_df = pd.read_json("data/embeddings2.json")
+    embeddings_df = pd.read_json("data/embeddings.json")
     df = fill_na_with_mean(df)
     return df, embeddings_df
 

@@ -1,12 +1,13 @@
-from hgnn import HGNN
-from hgnnp import HGNNP
-from hyperedges import get_dhg_hyperedges
-from network_utils import normalize_features
+from models.hypergraph.hgnn import HGNN
+from models.hypergraph.hgnnp import HGNNP
+from models.hypergraph.hyperedges import get_dhg_hyperedges
+from models.network_utils import normalize_features
 from dataloader.data_preparation import load_data
 import pickle
 
-def HGN(model, data):
-    data = pickle.load(open("graph_with_embedding.pkl", "rb"))
+
+def HGNFrame():
+    data = pickle.load(open("hgm.pkl", "rb"))
     df, _ = load_data()
     data = get_dhg_hyperedges(data, df)
     data = normalize_features(data)
@@ -20,8 +21,8 @@ def HGN(model, data):
     return model, data
 
 
-def HGNP(model, data):
-    data = pickle.load(open("graph_with_embedding.pkl", "rb"))
+def HGNPFrame():
+    data = pickle.load(open("hgm.pkl", "rb"))
     df, _ = load_data()
     data = get_dhg_hyperedges(data, df)
     data = normalize_features(data)

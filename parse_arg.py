@@ -6,7 +6,7 @@ def parse_arguments():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
 
-    parse_arguments(
+    parser.add_argument(
         "--model",
         type=str,
         default="hgnn",
@@ -42,9 +42,7 @@ def parse_arguments():
     )
 
     parser.add_argument(
-        "--lr", type=float,
-        default=0.1,
-        help="The learning rate. Default is 0.1."
+        "--lr", type=float, default=0.1, help="The learning rate. Default is 0.1."
     )
 
     parser.add_argument(
@@ -53,12 +51,19 @@ def parse_arguments():
         default=500,
         help="The number of training epochs. Default is 500.",
     )
-    
+
     parser.add_argument(
         "--mbti",
         type=bool,
         default=True,
         help="Use MBTI labels or Enneagram. Default is True.",
+    )
+    
+    parser.add_argument(
+        "--save_dir",
+        type=str,
+        default=".",
+        help="Directory to save logs and model. Default is current directory.",
     )
 
     args = parser.parse_args()

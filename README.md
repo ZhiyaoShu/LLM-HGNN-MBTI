@@ -31,18 +31,33 @@ We collected totally **85462** users profiles from **[Personality Cafe](https://
 To speed up computation, we selected **17000** users with both completed MBTI and Enneagram information to generate natrual-language descriptions.  
 
 ## Settings
+
 To run the code, simply clone the repository and install the required packages:
+
 ```bash
+git clone https://github.com/ZhiyaoShu/LLM-HGNN-MBTI.git
+cd LLM-HGNN-MBTI
 pip install -r requirements.txt
 ```
 
 ## Evaluation using pretrained models
+
 You can run the test.py to evaluate the following pretrained models
 
+```python
+python test.py --model hgm.pkl --mbti true
+```
+
 ## [Training](src/train.py)
-To train the model, you need to run the embedding scripts to add LLM-generated descriptions into the dataset. Then you can run the train.py to train the model.
+
+To train the model, you need to download the LLM-description embedded features. Then you can run the train.py to train the model with the following arguments:
+
+```python
+python train.py --model hgnn
+```
 
 ## Contribution & Collaboration
+
 DHG
 OPENAI
 We encourage the community to contribute to this project. Feel free to send us feedback, suggest improvements, or submit pull requests with your innovative ideas and changes.

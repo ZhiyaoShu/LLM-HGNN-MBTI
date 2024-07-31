@@ -1,5 +1,5 @@
 numpy
-torch
+torch==1.13.1
 matplotlib
 scikit-learn
 pandas

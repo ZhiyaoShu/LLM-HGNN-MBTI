@@ -1,22 +1,33 @@
 import torch
 from tqdm import tqdm
-from train import random_guess_baseline
+from randomGuess import random_guess_baseline
 from sklearn.metrics import f1_score, accuracy_score
 import torchmetrics
-import parse
+import parse_arg
 import logging
 import datetime
+from utils import setup_logging
+import os
 
 def test(model, data):
     # Load best model
-    args = parse.parse_arguments()
+    args = parse_arg.parse_arguments()
     time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     output_folder = f"logs/{args.save_dir}/{time}"
+    setup_logging(output_folder)
+
+    if args.model is None:
+        raise ValueError("Model path must be provided using --model argument.")
+
+    if not os.path.exists(args.model):
+        raise FileNotFoundError(f"Model file not found: {args.model}")
+    print(f"Loading model from {args.model}")
+
     model.load_state_dict(torch.load(f"{output_folder}/best_model_{time}.pth"))
-    
+
     # Test the model
     model.eval()
-    
+
     with torch.no_grad():
         out = model(data.node_features, data.hg)
         pred = torch.softmax(out, dim=1)
