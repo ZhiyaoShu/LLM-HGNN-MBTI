@@ -10,7 +10,7 @@ def parse_arguments():
         "--model",
         type=str,
         default="hgnn",
-        help="The model to use. Can be hgnn, hgnnp, GCN, GAT, GTransformer. Default is HGNN.",
+        help="The model to use. Can be hgnn, hgnnp, gcn, gat, gtransformer. Default is hgnn.",
     )
 
     parser.add_argument(
@@ -23,7 +23,7 @@ def parse_arguments():
     parser.add_argument(
         "--num_classes",
         type=int,
-        default=16,
+        default=16, # 16 MBTI types
         help="The number of HGCN layers. Default is 16.",
     )
 
@@ -56,14 +56,21 @@ def parse_arguments():
         "--mbti",
         type=bool,
         default=True,
-        help="Use MBTI labels or Enneagram. Default is True.",
+        help="Use MBTI labels or Enneagram(False). Default is True.",
     )
-    
+
     parser.add_argument(
         "--save_dir",
         type=str,
-        default=".",
+        default="logs",
         help="Directory to save logs and model. Default is current directory.",
+    )
+
+    parser.add_argument(
+        "--test_model_path",
+        type=str,
+        default=None,
+        help="Path to the model to test directly. Default is None.",
     )
 
     args = parser.parse_args()

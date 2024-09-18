@@ -1,5 +1,4 @@
 import torch
-from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 import torch.nn.functional as F
 import logging
@@ -11,8 +10,10 @@ import tqdm
 
 import parse_arg
 from utils import seed_setting, weighted_cross_entropy, weights, setup_logging
-from test import test  # 注意test模块已经被导入
-from models.get_models import get_models
+from test import test
+from models.model_utils import get_models
+
+args = parse_arg.parse_arguments()
 
 
 def train(model, data, optimizer, model_type):
@@ -32,7 +33,8 @@ def train(model, data, optimizer, model_type):
     probabilities = F.softmax(logits_shifted, dim=1)
     probabilities = torch.clamp(probabilities, min=0, max=1)
     if torch.any(torch.isnan(probabilities)):
-        raise RuntimeError("NaN values detected in probabilities after clamping.")
+        logging.error("NaN values detected in probabilities after clamping.")
+        raise RuntimeError
 
     focal = FocalLoss(gamma=2)
     loss_weighted = weighted_cross_entropy(out_logits, target, weights)
@@ -41,7 +43,7 @@ def train(model, data, optimizer, model_type):
     loss = loss_weighted + loss_focal
 
     if torch.isnan(loss):
-        logging.info("NaN detected in loss computation!")
+        logging.debug("NaN detected in loss computation!")
         return torch.tensor(float("nan"))
     loss.backward()
     torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
@@ -61,32 +63,32 @@ def validate(model, data):
 
 
 def main():
-    # Record the training info
-    args = parse_arg.parse_arguments()
+    # Record the training debug
     time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    output_folder = f"logs/{args.save_dir}/{time}"
+    output_folder = f"{args.save_dir}/{time}"
 
-    setup_logging(output_folder, console="debug")
-    logging.info(" ".join(sys.argv))
-    logging.info(f"Arguments: {args}")
-    logging.info(f"The outputs are being saved in {output_folder}")
-
+    setup_logging(output_folder, console="debug", debug_filename="debug.log")
+    logging.debug(" ".join(sys.argv))
+    logging.debug(f"Arguments: {args}")
+    logging.debug(f"The training outputs are being saved in {output_folder}/debug.log")
     seed_setting()
+
     best_val_loss = float("inf")
     best_model_state = None
 
     # Initialize model, optimizer, scheduler
-    model, data, _, _ = get_models(args.model)
+    model, data = get_models(args.model)
+
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
     scheduler = ReduceLROnPlateau(optimizer, mode="min", factor=0.1, patience=10)
 
     # Iterate and output the best model
-    for epoch in tqdm.tqdm(range(1, args.epochs + 1), desc="Training Progress"):
+    for epoch in tqdm.tqdm(range(args.epochs), desc="Training Progress"):
         train_loss = train(model, data, optimizer, args.model)
         val_loss = validate(model, data)
         scheduler.step(val_loss)
 
-        logging.info(
+        logging.debug(
             f"Epoch {epoch}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}"
         )
 
@@ -96,16 +98,12 @@ def main():
 
     # Save the best model
     torch.save(best_model_state, f"{output_folder}/best_model_{time}.pth")
+    logging.debug(f"Best model saved to {output_folder}/best_model_{time}.pth")
     model.load_state_dict(best_model_state)
 
     # Test the best model
     test_acc, test_f1, micro_f1, auc_score = test(model, data)
 
-    logging.info(f"Test Accuracy: {test_acc:.4f}")
-    logging.info(f"Test F1 Score (Macro): {test_f1:.4f}")
-    logging.info(f"Test Micro F1 Score: {micro_f1:.4f}")
-    logging.info(f"Test AUC Score: {auc_score:.4f}")
-    logging.info("Experiment Completed")
     return test_acc, test_f1, micro_f1, auc_score
 
 

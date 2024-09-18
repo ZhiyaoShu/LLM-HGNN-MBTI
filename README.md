@@ -4,7 +4,7 @@
 
 ## Overview
 
-This project presents a novel framework combining hypergraphs with large language models (LLMs) to analyze personality traits from online social networks, aiming to overcome the limitations of traditional data mining methods, and leveraging the associative capabilities of LLMs and the structural potential of hypergraphs to provide a more profound analysis of user behavior and interactions within dynamic flows, networks in digital realms.
+This project presents a novel framework combining hypergraphs with large language models (LLMs) to analyze personality traits from online social networks. The project aims to overcome the limitations of traditional data mining methods, and leveraging the associative capabilities of LLMs and the structural potential of hypergraphs to provide a more profound analysis of user behavior and interactions within dynamic social flows and networks in digital realms.
 
 ![Image](assets/framework3_00.jpg)
 
@@ -12,11 +12,11 @@ This project presents a novel framework combining hypergraphs with large languag
 
 This project makes three significant contributions to the field:
 
-1. **Prompt-based Personality Extraction**: We have designed a novel prompt-based method to effectively extract users' personality traits from large language models.
-2. **Data Collection and Analysis**: We performed extensive data collection and analysis from the Personality Cafe forum, enabling comprehensive insights into user profiles and interactions.
-3. **Hypergraph-based Modeling**: We proposed a new model using Deep hypergraphs to capture the intricate relationships among users and their personality traits. This model can be used to depict social environments and energy flows in real-world scenarios.
+1. **Prompt-based Personality Extraction with LLM**: We have designed a novel prompt-based method to effectively extract users' personality traits from large language models.
+2. **Data Collection and Analysis**: We performed extensive data collection and analysis from the [Personality Cafe](https://www.personalitycafe.com/) forum, enabling comprehensive insights into user profiles and interactions.
+3. **Hypergraph neural network for social network simulation**: We proposed a new model using Deep hypergraphs to capture the intricate relationships among users and their personality traits. This model can be used to depict social environments and energy flows in real-world scenarios.
 
-## [Datasets](data/users_data_all.json)
+## [Datasets](dataset/users_data_all.json)
 
 We collected totally **85462** users profiles from **[Personality Cafe](https://www.personalitycafe.com/)**, with the following information:
 
@@ -28,7 +28,7 @@ We collected totally **85462** users profiles from **[Personality Cafe](https://
 - Sexual orientation
 - Enneagram Type
 
-To speed up computation, we selected **17000** users with both completed MBTI and Enneagram information to generate natrual-language descriptions.  
+To speed up, we selected **17000** users with both completed followers, groups, MBTI and Enneagram information to generate natrual-language descriptions. The dataset is stored in [data/users_data_small.csv](dataset/users_data_all.json).
 
 ## Settings
 
@@ -40,24 +40,54 @@ cd LLM-HGNN-MBTI
 pip install -r requirements.txt
 ```
 
-## Evaluation using pretrained models
+## test pre-trained models
 
-You can run the test.py to evaluate the following pretrained models
+You can run the test.py to test a pre-trained model with following arguments:
 
 ```python
-python test.py --model hgm.pkl --mbti true
+python test.py --model_path best_model.pth 
 ```
 
 ## [Training](src/train.py)
 
-To train the model, you need to download the LLM-description embedded features. Then you can run the train.py to train the model with the following arguments:
+To train the model, you need to:
+
+- Prepear for natrual-language descriptions and converted embeddings.
+
+As many new LLMs emerged after we publish, you can either generate new features with SOTAs with row data, or run with the existed generated descriptions features from the GPT-3.5-turbo, converted by sentence-transformers. You can download the descriptions and features from [here]
+
+- Processed feature maps: You can either download the processed features from [here]. Or run:
 
 ```python
-python train.py --model hgnn
+python dataloader/data_preparation.py
 ```
+
+Running without generative descriptions:
+
+```python
+python dataloader/baseline_data_process.py
+```
+
+- Three types hyperedges: You can either download existed hyperedges [here], or run:
+
+```python
+python models/hypergraph/hyperedges.py
+```
+
+After you prepare previous steps, you can start training the model with the following arguments:
+
+```python
+python train.py
+```
+
+Check the [parser arguments](parse_arg.py) to adjust output path, models, epoches and other parameters.
 
 ## Contribution & Collaboration
 
-DHG
-OPENAI
+Zhiyao Shu
+
+(DHG) [https://deephypergraph.readthedocs.io/en/latest/index.html]
+(OPENAI API) [https://beta.openai.com/docs/]
+(LLAMA)[]
+(Google Gemma)
 We encourage the community to contribute to this project. Feel free to send us feedback, suggest improvements, or submit pull requests with your innovative ideas and changes.

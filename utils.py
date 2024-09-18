@@ -5,6 +5,8 @@ import torch.nn as nn
 import logging
 import os
 import multiprocessing
+import sys
+import traceback
 
 
 # Random seeds
@@ -13,10 +15,10 @@ def seed_setting(seed=42):
     np.random.seed(seed)
     torch.manual_seed(seed)
 
+
 # Weight loss functions
 def weighted_cross_entropy(output, target, weights):
-    tensor_weights = torch.tensor(
-        weights, dtype=torch.float, device=output.device)
+    tensor_weights = torch.tensor(weights, dtype=torch.float, device=output.device)
     criterion = nn.CrossEntropyLoss(weight=tensor_weights)
     return criterion(output, target)
 
@@ -46,20 +48,44 @@ weights[mbti_to_number["INTP"] - 1] = 0.78
 
 
 # Set up ouput directory
-def setup_logging(output_folder, console="debug"):
+def setup_logging(output_folder, console="debug", debug_filename="debug.log"):
     if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
+        os.makedirs(output_folder, exist_ok=True)
 
-    log_file = os.path.join(output_folder, "output.log")
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    log_file_path = os.path.join(output_folder, debug_filename)
 
-    logging.basicConfig(
-        level=logging.DEBUG if console == "debug" else logging.INFO,
-        format="%(asctime)s %(levelname)s %(message)s",
-        handlers=[
-            logging.FileHandler(log_file),
-            logging.StreamHandler()
-        ]
-    )
+    formatter = logging.Formatter("%(asctime)s   %(message)s", "%Y-%m-%d %H:%M:%S")
+
+    if logger.handlers:
+        try:
+            debug_file_handler = logging.FileHandler(log_file_path)
+            debug_file_handler.setLevel(logging.DEBUG)
+            debug_file_handler.setFormatter(formatter)
+
+            logger.addHandler(debug_file_handler)
+
+            console_handler = logging.StreamHandler()
+            if console == "debug":
+                console_handler.setLevel(logging.DEBUG)
+            console_handler.setFormatter(formatter)
+            logger.addHandler(console_handler)
+            print(
+                f"Logging initialized. Log file: {os.path.join(output_folder, debug_filename)}"
+            )
+            logging.debug(
+                f"Logging initialized. Log file: {os.path.join(output_folder, debug_filename)}"
+            )
+        except Exception as e:
+            print(f"Failed to create log file {log_file_path}. Exception: {e}")
+            logging.error(f"Failed to create log file {log_file_path}. Exception: {e}")
+            return
+
+    if os.path.exists(log_file_path):
+        logging.debug(f"Log file {log_file_path} created successfully.")
+    else:
+        logging.error(f"{log_file_path} dose not exist.")
 
 
 # Check if GPU is available
@@ -67,9 +93,9 @@ def gpu_config():
     if torch.cuda.is_available():
         device = torch.device("cuda")
         gpu_numbers = torch.cuda.device_count()
-        logging.info(f"Using {gpu_numbers} GPUs")
+        logging.debug(f"Using {gpu_numbers} GPUs")
     else:
         device = torch.device("cpu")
         cpu_numbers = multiprocessing.cpu_count()
-        logging.info(f"Using {cpu_numbers} CPU")
+        logging.debug(f"Using {cpu_numbers} CPU")
     return device
