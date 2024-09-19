@@ -6,14 +6,28 @@ import copy
 from focal_loss.focal_loss import FocalLoss
 from datetime import datetime
 import sys
-import tqdm
+from tqdm import tqdm
 
 import parse_arg
-from utils import seed_setting, weighted_cross_entropy, weights, setup_logging
+from utils import (
+    seed_setting,
+    weighted_cross_entropy,
+    weights,
+    setup_logging,
+    gpu_config,
+)
 from test import test
 from models.model_utils import get_models
 
 args = parse_arg.parse_arguments()
+# Record the training debug
+time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+output_folder = f"{args.save_dir}/{time}"
+
+setup_logging(output_folder, console_level="info", debug_filename="info.log")
+# logging.info(" ".join(sys.argv))
+logging.info(f"Arguments: {args}")
+logging.info(f"The training outputs are being saved in {output_folder}/info.log")
 
 
 def train(model, data, optimizer, model_type):
@@ -63,32 +77,27 @@ def validate(model, data):
 
 
 def main():
-    # Record the training debug
-    time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    output_folder = f"{args.save_dir}/{time}"
-
-    setup_logging(output_folder, console="debug", debug_filename="debug.log")
-    logging.debug(" ".join(sys.argv))
-    logging.debug(f"Arguments: {args}")
-    logging.debug(f"The training outputs are being saved in {output_folder}/debug.log")
     seed_setting()
+
+    device=gpu_config()
 
     best_val_loss = float("inf")
     best_model_state = None
 
     # Initialize model, optimizer, scheduler
     model, data = get_models(args.model)
+    model = model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
     scheduler = ReduceLROnPlateau(optimizer, mode="min", factor=0.1, patience=10)
 
     # Iterate and output the best model
-    for epoch in tqdm.tqdm(range(args.epochs), desc="Training Progress"):
-        train_loss = train(model, data, optimizer, args.model)
-        val_loss = validate(model, data)
+    for epoch in tqdm(range(args.epochs), desc="Training Progress"):
+        train_loss = train(model, data, optimizer, args.model, device)
+        val_loss = validate(model, data, device)
         scheduler.step(val_loss)
 
-        logging.debug(
+        logging.info(
             f"Epoch {epoch}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}"
         )
 
@@ -98,8 +107,12 @@ def main():
 
     # Save the best model
     torch.save(best_model_state, f"{output_folder}/best_model_{time}.pth")
-    logging.debug(f"Best model saved to {output_folder}/best_model_{time}.pth")
+    logging.info(f"Best model saved to {output_folder}/best_model_{time}.pth")
     model.load_state_dict(best_model_state)
+    
+    # Back to CPU after training
+    model = model.to("cpu")
+    torch.cuda.empty_cache()
 
     # Test the best model
     test_acc, test_f1, micro_f1, auc_score = test(model, data)

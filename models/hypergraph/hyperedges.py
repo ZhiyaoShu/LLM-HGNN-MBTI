@@ -3,6 +3,7 @@ import pickle
 import torch
 import dhg
 import ast
+import logging
 
 # Define the self-loop removal function
 def remove_self_loops(edge_index: torch.Tensor) -> torch.Tensor:
@@ -14,31 +15,31 @@ device = torch.device("cuda" if torch.cuda else "cpu")
 
 
 def get_dhg_hyperedges(data, df, cache_dir="cache", hyperedges_file="hyperedges.pkl"):
-    print("Checking for non-finite values in feature matrix...")
     if not torch.isfinite(data.x).all():
-        print("Non-finite values found in data.x, applying fill strategy...")
+        logging.debug("Non-finite values found in data.x, applying fill strategy...")
         data.x[~torch.isfinite(data.x)] = 0
 
     # Define the hyperedges based on data
     edge_index = data.edge_index
     edge_index_no_self_loops = remove_self_loops(edge_index)
+    logging.debug("Edge index shape:", edge_index_no_self_loops.shape)
 
     # Create a graph from the edge index
     _g = dhg.Graph(
         data.x.size(0), edge_index_no_self_loops.t().tolist(), merge_op="mean"
     )
-    print("Graph:", _g)
+    logging.debug("Graph:", _g)
 
     # Add nodes into the hypergraph
     hg = dhg.Hypergraph(data.x.size(0))
-
+    
     # Add hyperedges into the hypergraph
     hg.add_hyperedges_from_graph_kHop(_g, k=2, only_kHop=False, group_name="kHop")
 
     # Clustering-based hyperedges
     k = 100
     hg.add_hyperedges_from_feature_kNN(data.x, k, group_name="feature_kNN")
-
+    
     # Group-based hyperedges
     user_to_index = {username: i for i, username in enumerate(df["Username"])}
 
@@ -85,9 +86,8 @@ def get_dhg_hyperedges(data, df, cache_dir="cache", hyperedges_file="hyperedges.
     # Save the hyperedges to a file
     hyperedges_path = os.path.join(cache_dir, hyperedges_file)
     with open(hyperedges_path, "wb") as f:
-        pickle.dump(hg, f)
+        pickle.dump({"hypergraph": hg, "x": data.x, "y": data.y}, f)
 
-    print(f"Hyperedges saved to {hyperedges_path}")
+    logging.debug(f"Hyperedges and features saved to {hyperedges_path}")
 
     return data
-

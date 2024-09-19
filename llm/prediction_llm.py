@@ -1,13 +1,16 @@
 from openai import OpenAI
-from dotenv import load_dotenv
+import datetime
+import parse_arg
 import os
 import json
 from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 import logging
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+args = parse_arg.parse_arguments()
+time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+output_folder = f"{args.save_dir}/{time}"
+
 
 tokenizer = AutoTokenizer.from_pretrained("google/gemma-7b")
 model = AutoModelForCausalLM.from_pretrained("google/gemma-7b")
@@ -17,6 +20,7 @@ MODEL_NAME_LLAMA = "meta-llama/Llama-2-7b-chat-hf"
 MODEL_NAME_OPENAI = "gpt-3.5-turbo-0125"
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 client_openai = OpenAI(api_key=OPENAI_API_KEY)
+
 
 def query_openai(prompt, model_name=MODEL_NAME_OPENAI):
     """
@@ -37,15 +41,16 @@ def query_openai(prompt, model_name=MODEL_NAME_OPENAI):
         )
         return response.choices[0].message.content
     except Exception as e:
-        logger.error(f"Failed to query OpenAI API with model {model_name}: {str(e)}")
+        logging.error(f"Failed to query OpenAI API with model {model_name}: {str(e)}")
         if model_name != MODEL_NAME_OPENAI:  # Check if the model is not already GPT-3.5
-            logger.info("Attempting to query using GPT-3.5 as a fallback.")
+            logging.debug("Attempting to query using GPT-3.5 as a fallback.")
             return query_openai(prompt, MODEL_NAME_OPENAI)  # Attempt with GPT-3.5
         else:
-            logger.info(
+            logging.debug(
                 "This iteration fails and will return None."
             )  # Log when returning None for GPT-3.5
             return None
+
 
 def query_llama(prompt):
     """
@@ -81,8 +86,9 @@ def query_llama(prompt):
         return result
 
     except Exception as e:
-        logger.error(f"Failed to query LLAMA API: {str(e)}")
+        logging.error(f"Failed to query LLAMA API: {str(e)}")
         return None
+
 
 def query_gemma(prompt):
     """
@@ -97,9 +103,10 @@ def query_gemma(prompt):
         response = tokenizer.decode(outputs[0], skip_special_tokens=True)
         return response
     except Exception as e:
-        logger.error(f"Failed to query GEMMA model: {str(e)}")
+        logging.error(f"Failed to query GEMMA model: {str(e)}")
         return None
-    
+
+
 INSTRUCTION = """
 Your task is to analyze user descriptions from user profiles, presented in the following JSON format:
 {
@@ -112,9 +119,12 @@ Based on the content of each description, determine the most probable MBTI perso
 
 It is very important to only provide the predicted MBTI type for each. No other texts, explanations or commentary are included even without a solid basis! Your analysis should be based solely on the provided descriptions, applying your understanding of the MBTI framework to make informed guesses. 
 """
+
+
 def clean_description(description):
     cleaned_text = description.replace("\\n", "\n").replace("\\t", "\t")
     return cleaned_text
+
 
 def load_json(file_path):
     try:
@@ -129,22 +139,24 @@ def load_json(file_path):
 def predict_mbti(file_path, model_function):
     """
     Processes the descriptions and predicts MBTI using the specified model.
-    
+
     :param file_path: Path to the JSON file containing user descriptions.
     :param model_name: Name of the model to use for prediction.
     :param query_function: The function to use for querying the model.
     :return: The prediction result or None if an error occurs.
     """
     try:
-        with open(file_path, 'r', encoding='utf-8') as file:
+        with open(file_path, "r", encoding="utf-8") as file:
             descriptions = json.load(file)
     except Exception as e:
         print(f"Failed to process the descriptions with {model_function.__name__}: {e}")
         return
-    
+
     results = {}
-    
-    for user_id, description in tqdm(descriptions.items(), desc="Processing descriptions"):
+
+    for user_id, description in tqdm(
+        descriptions.items(), desc="Processing descriptions"
+    ):
         cleaned_description = clean_description(description)
         prompt = f"{INSTRUCTION}\n\nDescription: {cleaned_description}"
         try:
@@ -153,6 +165,7 @@ def predict_mbti(file_path, model_function):
         except Exception as e:
             print(f"Failed to process user {user_id}: {e}")
     return results
+
 
 def save_to_json(data, filename):
     """
@@ -167,17 +180,18 @@ def save_to_json(data, filename):
         print(f"Data successfully saved to {filename}")
     except Exception as e:
         print(f"Failed to save data to {filename}: {e}")
-        
+
+
 def generate_and_save_results(file_path):
     """
     Generates MBTI predictions using all three models and saves the results to separate files.
-    
+
     :param file_path: Path to the JSON file containing user descriptions.
     """
     model_functions = {
-        'openai': query_openai,
-        'llama': query_llama,
-        'gemma': query_gemma
+        "openai": query_openai,
+        "llama": query_llama,
+        "gemma": query_gemma,
     }
 
     for model_name in tqdm(model_functions.keys(), desc="Processing models"):
@@ -187,12 +201,15 @@ def generate_and_save_results(file_path):
             response = predict_mbti(file_path, model_function)
             if response:
                 save_to_json(response, output_filename)
-                print(f"Successfully saved predictions from {model_name} to {output_filename}")
+                print(
+                    f"Successfully saved predictions from {model_name} to {output_filename}"
+                )
             else:
                 print(f"Failed to generate MBTI predictions using {model_name}.")
         except Exception as e:
             print(f"Exception while processing {model_name}: {e}")
 
+
 if __name__ == "__main__":
-  file_path = "gpt_description2.json"
-  generate_and_save_results(file_path)
+    file_path = "gpt_description.json"
+    generate_and_save_results(file_path)

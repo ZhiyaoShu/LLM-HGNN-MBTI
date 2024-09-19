@@ -3,9 +3,9 @@ import torch.nn as nn
 import dhg
 from dhg.nn import HGNNConv
 
+# Reference from Hypergraph Neural Networks <https://arxiv.org/pdf/1809.09401>_ paper (AAAI 2019).
 class HGNN(nn.Module):
-    r"""The HGNN model proposed in `Hypergraph Neural Networks <https://arxiv.org/pdf/1809.09401>`_ paper (AAAI 2019).
-
+    r"""
     Args:
         ``in_channels`` (``int``): :math:`C_{in}` is the number of input channels.
         ``hid_channels`` (``int``): :math:`C_{hid}` is the number of hidden channels.
@@ -24,6 +24,7 @@ class HGNN(nn.Module):
     ) -> None:
         super().__init__()
         self.layers = nn.ModuleList()
+        self.skip_layers = nn.ModuleList()
         self.layers.append(
             HGNNConv(in_channels, hid_channels, use_bn=use_bn, drop_rate=drop_rate)
         )
@@ -38,7 +39,11 @@ class HGNN(nn.Module):
             ``X`` (``torch.Tensor``): Input vertex feature matrix. Size :math:`(N, C_{in})`.
             ``hg`` (``dhg.Hypergraph``): The hypergraph structure that contains :math:`N` vertices.
         """
-        for layer in self.layers:
-            X = layer(X, hg)
-            
+        for i, layer in enumerate(self.layers):
+            skip_X = X  
+            X = layer(X, hg)  
+            if i < len(self.skip_layers):  
+                skip_X = self.skip_layers[i](skip_X)  
+                X = X + skip_X  
+
         return X

@@ -1,8 +1,9 @@
 import numpy as np
 import torch
-from sklearn.metrics import recall_score, f1_score, accuracy_score
+from sklearn.metrics import f1_score, accuracy_score
 import torchmetrics
 from utils import seed_setting
+import logging
 
 
 # Random guess
@@ -40,7 +41,5 @@ def random_guess_baseline(y_true):
         y_true_tensor.long().unsqueeze(0),
     )
     auc_score = auroc_metric.compute()
-
-    print(f"AUC Score: {auc_score}")
 
     return acc, f1, f1_micro, auc_score

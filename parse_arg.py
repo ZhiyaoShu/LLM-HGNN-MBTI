@@ -15,7 +15,7 @@ def parse_arguments():
 
     parser.add_argument(
         "--use_llm",
-        type=bool,
+        type=lambda x: x.lower() == 'true',
         default=True,
         help="Whether to use LLM pre-processed embeddings. Default is True.",
     )

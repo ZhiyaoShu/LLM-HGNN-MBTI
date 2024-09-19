@@ -5,6 +5,7 @@ import logging
 # Load MBTI
 df_personality = pd.read_csv("dataset/users_data_small.csv")
 
+
 # Encode MBTI types
 def encode_mbti_number(mbti):
     mbti_to_number = {
@@ -27,17 +28,23 @@ def encode_mbti_number(mbti):
     }
     return mbti_to_number[mbti]
 
-# Apply encoding
-df_personality.loc[:, "Label"] = df_personality["MBTI"].apply(
-    encode_mbti_number)
-# Prepare class and label methods
-y_mbti = torch.tensor(
-    df_personality.loc[:, "Label"].values, dtype=torch.long
-).unsqueeze(1)
 
-# Encode ENN types
+# Apply encoding
+def y_mbti(df_personality):
+    # Apply encoding
+    df_personality.loc[:, "Label"] = df_personality["MBTI"].apply(encode_mbti_number)
+
+    # Prepare class and label methods
+    y_mbti = torch.tensor(df_personality.loc[:, "Label"].values, dtype=torch.long).unsqueeze(
+        1
+    )
+    return y_mbti
+
+
+# Encode Enneagram types
 enneagram = df_personality["EnneagramType"].unique()
-logging.info(f"Enneagram types: {enneagram}")
+logging.debug(f"Enneagram types: {enneagram}")
+
 
 def enneagramType(enneagram):
     enneagram_to_number = {
@@ -54,12 +61,13 @@ def enneagramType(enneagram):
     if enneagram in ["Unknown", "nan", None] or pd.isna(enneagram):
         return 9
     enneagram = enneagram.split("w")[0].strip()
-    return enneagram_to_number.get(enneagram)
+    return enneagram_to_number[enneagram]
 
 
-df_personality.loc[:, "Label"] = df_personality["EnneagramType"].apply(enneagramType)
+def y_enngram(df_personality):
+    df_personality.loc[:, "Label"] = df_personality["EnneagramType"].apply(enneagramType)
 
-logging.info(df_personality["Label"])
-y_enngram = torch.tensor(
-    df_personality.loc[:, "Label"].values, dtype=torch.long
-).unsqueeze(1)
+    y_enngram = torch.tensor(
+        df_personality.loc[:, "Label"].values, dtype=torch.long
+    ).unsqueeze(1)
+    return y_enngram

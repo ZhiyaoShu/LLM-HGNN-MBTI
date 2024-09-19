@@ -7,10 +7,10 @@ from torch_geometric.data import Data
 from sklearn.feature_extraction.text import TfidfVectorizer
 import ast
 import pickle
-
+import logging
 
 def load_onehot_data():
-    df = pd.read_csv('data/updated_merge_new_df.csv', encoding='utf-8')
+    df = pd.read_csv('dataset/updated_merge_new_df.csv', encoding='utf-8')
 
     return df
 

@@ -10,8 +10,7 @@ def check_data_distribution(data):
     """
     from scipy.stats import shapiro
 
-    sample = data.x[np.random.choice(
-        data.x.size(0), 1000, replace=False)].numpy()
+    sample = data.x[np.random.choice(data.x.size(0), 1000, replace=False)].numpy()
 
     stat, p = shapiro(sample)
     return "normal" if p > 0.05 else "non-normal"
@@ -23,9 +22,5 @@ def normalize_features(data):
     """
     distribution = check_data_distribution(data)
     scaler = StandardScaler() if distribution == "normal" else MinMaxScaler()
-    data.x = torch.tensor(scaler.fit_transform(
-        data.x.numpy()), dtype=torch.float)
+    data.x = torch.tensor(scaler.fit_transform(data.x.numpy()), dtype=torch.float)
     return data
-
-
-

@@ -4,6 +4,7 @@ import dhg
 from dhg.nn import HGNNPConv
 from torch.nn import Linear
 
+# Reference from Hypergraph Neural Networks <https://arxiv.org/pdf/1809.09401>_ paper (AAAI 2019).
 class HGNNP(nn.Module):
     r"""The HGNN :sup:`+` model proposed in `HGNN+: General Hypergraph Neural Networks <https://ieeexplore.ieee.org/document/9795251>`_ paper (IEEE T-PAMI 2022).
 
@@ -37,9 +38,13 @@ class HGNNP(nn.Module):
         self.mlp = Linear(hid_channels, num_classes)
         
     def get_embedding(self, X: torch.Tensor, hg: "dhg.Hypergraph") -> torch.Tensor:
-        for layer in self.layers:
-            X = layer(X, hg)
-        
+        for i, layer in enumerate(self.layers):
+            skip_X = X  
+            X = layer(X, hg)  
+            if i < len(self.skip_layers):  
+                skip_X = self.skip_layers[i](skip_X)  
+                X = X + skip_X  
+
         return X
 
     def forward(self, X: torch.Tensor, hg: "dhg.Hypergraph") -> torch.Tensor:
@@ -52,5 +57,3 @@ class HGNNP(nn.Module):
         X = self.get_embedding(X, hg)
         X = self.mlp(X)
         return X
-
-

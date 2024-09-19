@@ -52,27 +52,18 @@ python test.py --model_path best_model.pth
 
 To train the model, you need to:
 
-- Prepear for natrual-language descriptions and converted embeddings.
+**- Natrual-language descriptions and converted embeddings.**
 
-As many new LLMs emerged after we publish, you can either generate new features with SOTAs with row data, or run with the existed generated descriptions features from the GPT-3.5-turbo, converted by sentence-transformers. You can download the descriptions and features from [here]
+As many new LLMs emerged after we publish, you can either generate new features with SOTAs with row data, or run with the existed generated descriptions features from the GPT-3.5-turbo, converted by sentence-transformers. You can download the descriptions and features from [dataset](dataset):
 
-- Processed feature maps: You can either download the processed features from [here]. Or run:
+- [Gpt-3.5-generated description](dataset/gpt_description.json)
 
-```python
-python dataloader/data_preparation.py
-```
+- [Converted embeddings](dataset/embeddings.json)
 
-Running without generative descriptions:
+- You can also downloaded [processed feature maps], which has aggregated features and 
 
-```python
-python dataloader/baseline_data_process.py
-```
-
-- Three types hyperedges: You can either download existed hyperedges [here], or run:
-
-```python
-python models/hypergraph/hyperedges.py
-```
+**- Three types hyperedges.**
+You can download existed hyperedges [here](https://drive.google.com/file/d/1ILBRv44OYk8f-sSix23aU_ntHDvrif1E/view?usp=drive_link)
 
 After you prepare previous steps, you can start training the model with the following arguments:
 

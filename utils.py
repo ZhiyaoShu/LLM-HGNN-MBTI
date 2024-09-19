@@ -5,9 +5,6 @@ import torch.nn as nn
 import logging
 import os
 import multiprocessing
-import sys
-import traceback
-
 
 # Random seeds
 def seed_setting(seed=42):
@@ -48,44 +45,46 @@ weights[mbti_to_number["INTP"] - 1] = 0.78
 
 
 # Set up ouput directory
-def setup_logging(output_folder, console="debug", debug_filename="debug.log"):
+def setup_logging(output_folder, console_level="DEBUG", debug_filename="debug.log"):
     if not os.path.exists(output_folder):
         os.makedirs(output_folder, exist_ok=True)
 
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.DEBUG)  
+
     log_file_path = os.path.join(output_folder, debug_filename)
 
-    formatter = logging.Formatter("%(asctime)s   %(message)s", "%Y-%m-%d %H:%M:%S")
+    formatter = logging.Formatter(
+        "%(asctime)s   %(levelname)s   %(message)s", "%Y-%m-%d %H:%M:%S"
+    )
 
-    if logger.handlers:
-        try:
-            debug_file_handler = logging.FileHandler(log_file_path)
-            debug_file_handler.setLevel(logging.DEBUG)
-            debug_file_handler.setFormatter(formatter)
+    # Clear existing handlers
+    if logger.hasHandlers():
+        logger.handlers.clear()
 
-            logger.addHandler(debug_file_handler)
+    # File handler for DEBUG level
+    try:
+        debug_file_handler = logging.FileHandler(log_file_path)
+        debug_file_handler.setLevel(logging.DEBUG)
+        debug_file_handler.setFormatter(formatter)
+        logger.addHandler(debug_file_handler)
+    except Exception as e:
+        print(f"Failed to create log file {log_file_path}. Exception: {e}")
+        logging.error(f"Failed to create log file {log_file_path}. Exception: {e}")
+        return
 
-            console_handler = logging.StreamHandler()
-            if console == "debug":
-                console_handler.setLevel(logging.DEBUG)
-            console_handler.setFormatter(formatter)
-            logger.addHandler(console_handler)
-            print(
-                f"Logging initialized. Log file: {os.path.join(output_folder, debug_filename)}"
-            )
-            logging.debug(
-                f"Logging initialized. Log file: {os.path.join(output_folder, debug_filename)}"
-            )
-        except Exception as e:
-            print(f"Failed to create log file {log_file_path}. Exception: {e}")
-            logging.error(f"Failed to create log file {log_file_path}. Exception: {e}")
-            return
+    # Console handler for adjustable level (DEBUG/INFO)
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(getattr(logging, console_level.upper(), logging.DEBUG))
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
 
-    if os.path.exists(log_file_path):
-        logging.debug(f"Log file {log_file_path} created successfully.")
-    else:
-        logging.error(f"{log_file_path} dose not exist.")
+    # logging.info(f"Logging initialized. Log file: {log_file_path}")
+
+    # if os.path.exists(log_file_path):
+    #     logging.debug(f"Log file {log_file_path} created successfully.")
+    # else:
+    #     logging.error(f"Log file {log_file_path} does not exist.")
 
 
 # Check if GPU is available
@@ -93,9 +92,9 @@ def gpu_config():
     if torch.cuda.is_available():
         device = torch.device("cuda")
         gpu_numbers = torch.cuda.device_count()
-        logging.debug(f"Using {gpu_numbers} GPUs")
+        logging.info(f"Using {gpu_numbers} GPUs")
     else:
         device = torch.device("cpu")
         cpu_numbers = multiprocessing.cpu_count()
-        logging.debug(f"Using {cpu_numbers} CPU")
+        logging.info(f"Using {cpu_numbers} CPU")
     return device

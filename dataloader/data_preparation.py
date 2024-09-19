@@ -8,26 +8,27 @@ from torch_geometric.data import Data
 from sklearn.feature_extraction.text import TfidfVectorizer
 import ast
 import pickle
-import parse_arg
 import sys
 import os
-
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../")))
+import parse_arg
+import logging
 from dataloader.personality_loader import y_enngram, y_mbti
-
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 args = parse_arg.parse_arguments()
 
+
 def fill_na_with_mean(df):
     for column in df.select_dtypes(include=[np.number]):
-        df[column].fillna(df[column].mean(), inplace=True)
+        df[column] = df[column].fillna(df[column].mean())
     return df
 
+
 def load_data():
-    # Load merged data
+    # Load data from the dataset
     df = pd.read_csv("dataset/users_data_small.csv", encoding="utf-8")
     # Load embeddings
-    embeddings_df = pd.read_json("data/embeddings.json")
+    embeddings_df = pd.read_json("dataset/embeddings.json")
     df = fill_na_with_mean(df)
     return df, embeddings_df
 
@@ -138,7 +139,7 @@ def process(args):
     else:
         y = y_enngram(df)
 
-    combined_df = one_hot_features(df, embeddings_df)
+    combined_df = one_hot_features(df, embeddings_df, args.use_llm)
 
     node_features, edge_index, user_to_index = prepare_graph_tensors(
         combined_df, df)
@@ -165,11 +166,11 @@ def process(args):
     data.val_mask = val_mask
     data.test_mask = test_mask
     data.groups = df["Groups"].tolist()
-
+    logging.debug("features:", data.x)
     with open('data_features.pkl', 'wb') as f:
         pickle.dump(data, f)
     return data
 
 
 if __name__ == "__main__":
-    process()
+    process(args)
