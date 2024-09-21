@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from scipy.stats import shapiro
 
 
 # Feature normalization
@@ -8,7 +9,6 @@ def check_data_distribution(data):
     """
     Check the distribution of the features in the data.
     """
-    from scipy.stats import shapiro
 
     sample = data.x[np.random.choice(data.x.size(0), 1000, replace=False)].numpy()
 

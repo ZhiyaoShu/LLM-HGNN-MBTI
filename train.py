@@ -33,6 +33,10 @@ def train(model, data, optimizer, model_type, device):
     model.train()
     optimizer.zero_grad()
 
+    data.node_features = data.node_features.to(device)
+    data.y = data.y.to(device)
+    data.train_mask = data.train_mask.to(device)
+
     # Get the hypergraph output
     if model_type in ["hgnn", "hgnnp"]:
         out = model(data.node_features, data.hg)
@@ -71,15 +75,13 @@ def train(model, data, optimizer, model_type, device):
 # Validation loop
 def validate(model, model_type, data, device):
     model.eval()
-
-    # Move data to the correct device
+    
     data.node_features = data.node_features.to(device)
     data.y = data.y.to(device)
-    data.val_mask = data.val_mask.to(device)
+    data.train_mask = data.train_mask.to(device)
 
     with torch.no_grad():
         if model_type in ["hgnn", "hgnnp"]:
-            data.hg = data.hg.to(device)
             out = model(data.node_features, data.hg)
         else:
             out = model(data)
@@ -94,17 +96,20 @@ def main():
     seed_setting()
 
     device = gpu_config()
+    model, data = get_models(args.model)
+
+    model = model.to(device)
+    data.node_features = data.node_features.to(device)
+    data.y = data.y.to(device)
+    data.train_mask = data.train_mask.to(device)
+    data.val_mask = data.val_mask.to(device)
+    if hasattr(data, 'hg'):
+        data.hg = data.hg.to(device)
 
     best_val_loss = float("inf")
     best_model_state = None
 
     # Initialize model, optimizer, scheduler
-    model, data = get_models(args.model)
-
-    # Move data to the correct device
-    model = model.to(device)
-    data = data.to(device)
-
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
     scheduler = ReduceLROnPlateau(optimizer, mode="min", factor=0.1, patience=10)
 

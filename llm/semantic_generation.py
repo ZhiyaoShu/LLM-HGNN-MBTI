@@ -4,7 +4,6 @@ import pandas as pd
 import json
 from tqdm import tqdm
 from dotenv import load_dotenv
-import tiktoken
 from sentence_transformers import SentenceTransformer
 from huggingface_hub import login
 import numpy as np
@@ -21,9 +20,6 @@ user_df = pd.read_csv('data/user_data_cleaned.csv', encoding='utf-8')
 
 MODEL_NAME = "gpt-3.5-turbo-0125"
 
-tiktoken_encoding_mapping = {
-    MODEL_NAME: tiktoken.get_encoding("cl100k_base"),
-}
 
 # https://platform.openai.com/docs/models/gpt-3-5-turbo
 # 90%, leave some buffer for safety

@@ -6,7 +6,6 @@ import torchmetrics
 import parse_arg
 import logging
 from datetime import datetime
-from utils import setup_logging
 
 # from utils import setup_logging
 from models.model_utils import get_models
@@ -16,19 +15,12 @@ args = parse_arg.parse_arguments()
 time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 output_folder = f"{args.save_dir}/{time}"
 
-# setup_logging(output_folder=output_folder, console_level="info", debug_filename="info.log")
-
-logging.info(" ".join(sys.argv))
-logging.info(f"Arguments: {args}")
-logging.info(f"The testing outputs are being saved in {output_folder}")
-
 
 def test(model, model_type, data, model_path):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+    model_path = args.test_model_path
+    
     # Load best model if not provided
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
     if model_path and isinstance(model_path, str):
         if model is None or data is None:
             model, data = get_models(args.model)
@@ -97,8 +89,3 @@ def test(model, model_type, data, model_path):
     torch.cuda.empty_cache()
 
     return test_acc, test_f1, micro_f1, auc_score
-
-
-# if __name__ == "__main__":
-#     args = parse_arg.parse_arguments()
-#     test(model_path=args.test_model_path)

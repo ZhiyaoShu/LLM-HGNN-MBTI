@@ -16,11 +16,16 @@ def get_models(model_type):
     """
     Get the model based on the model name.
     """
-    cache_file = f"cache/{model_type}_model_data.pkl"
+    cache_dir = "cache"
+
+    os.makedirs(name=cache_dir, exist_ok=True)
+
+    cache_file = f"{cache_dir}/{model_type}_model_data.pkl"
+
     if os.path.exists(cache_file):
         with open(cache_file, "rb") as f:
             model, data = pickle.load(f)
-        logging.debug(f"Loaded {model_type} model and data from cache.")
+        logging.info(f"Loaded {model_type} model and data from cache.")
         return model, data
     else:
         # Generate the model and data
@@ -33,7 +38,7 @@ def get_models(model_type):
             # Save the model and data to cache
             with open(cache_file, "wb") as f:
                 pickle.dump((model, data), f)
-            print(f"Saved {model_type} model and data to cache.")
+            logging.info(f"Saved {model_type} model and data to cache.")
             return model, data
         else:
             if model_type == "gcn":
@@ -42,9 +47,8 @@ def get_models(model_type):
                 model, data = GAT()
             elif model_type == "gtrans":
                 model, data = GTRANS()
-            logging.debug(f"Model shape: {model}")
             # Save the model and data to cache
             with open(cache_file, "wb") as f:
                 pickle.dump((model, data), f)
-            logging.debug(f"Saved {model_type} model and data to cache.")
+            logging.info(f"Saved {model_type} model and data to cache.")
             return model, data

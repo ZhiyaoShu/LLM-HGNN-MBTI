@@ -1,6 +1,6 @@
 from models.hypergraph.hgnn import HGNN
 from models.hypergraph.hgnnp import HGNNP
-from models.hypergraph.hyperedges import get_dhg_hyperedges
+from models.hypergraph.hyperedges import HyperedgeData, get_hyperedges
 from models.network_utils import normalize_features
 from dataloader import data_preparation
 import pickle
@@ -10,24 +10,32 @@ import parse_arg
 
 args = parse_arg.parse_arguments()
 
-data_path = "data_features.pkl"
-hyperedge_path = "cache/hyperedges.pkl"
+if args.use_llm:
+    data_path = "data_features.pkl"
+else:
+    data_path = "baseline_data.pkl"
+
+hyperedge_path = "hyperedges.pkl"
 
 
 def HGNFrame():
     if not os.path.exists(data_path):
+        logging.info("Data file not found. Preparing data...")
         data_preparation()
     else:
-        data = pickle.load(open("data_features.pkl", "rb"))
+        logging.info("Data file found. Loading data...")
+        data = pickle.load(open(data_path, "rb"))
     df, _ = data_preparation.load_data()
 
     if not os.path.exists(hyperedge_path):
-        data = get_dhg_hyperedges(data, df)
+        logging.info(f"Hyperedges not found. Preparing hyperedges...")
+        data = get_hyperedges(data, df)
+        data = HyperedgeData(data, df)
+        data.save_hyperedges(hyperedge_path)
     else:
-        data = pickle.load(open(hyperedge_path, "rb"))
-    logging.debug(f"Input data type: {type(data)}")
-    logging.debug(f"Attributes of data: {dir(data)}")
-
+        logging.info(f"Loading hyperedges from {hyperedge_path}")
+        data = HyperedgeData.load_hyperedges(hyperedge_path)
+    logging.info(f"Input data type: {type(data)}")
     data = normalize_features(data)
     node_features = data.x
     model = HGNN(
@@ -41,20 +49,22 @@ def HGNFrame():
 
 def HGNPFrame():
     if not os.path.exists(data_path):
-        logging.debug("Data file not found. Preparing data...")
+        logging.info("Data file not found. Preparing data...")
         data_preparation()
     else:
-        logging.debug("Data file found. Loading data...")
+        logging.info("Data file found. Loading data...")
         data = pickle.load(open("data_features.pkl", "rb"))
     df, _ = data_preparation.load_data()
+
     if not os.path.exists(hyperedge_path):
-        logging.debug("Hyperedge file not found. Preparing hyperedges...")
-        data = get_dhg_hyperedges(data, df)
+        logging.info(f"Hyperedges not found. Preparing hyperedges...")
+        data = get_hyperedges(data, df)
+        data = HyperedgeData(data, df)
+        data.save_hyperedges(hyperedge_path)
     else:
-        logging.debug("Hyperedge file found. Loading hyperedges...")
-        data = pickle.load(open(hyperedge_path, "rb"))
-    logging.debug(f"Data type: {type(data)}")
-    logging.debug(f"Attributes of data: {dir(data)}")
+        logging.info(f"Loading hyperedges from {hyperedge_path}")
+        data = HyperedgeData.load_hyperedges(hyperedge_path)
+    logging.info(f"Input data type: {type(data)}")
     data = normalize_features(data)
     node_features = data.x
     model = HGNNP(

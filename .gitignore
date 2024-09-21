@@ -5,3 +5,4 @@ archieve/
 __pycache__/
 *.xlsx
 count.py
+*.log

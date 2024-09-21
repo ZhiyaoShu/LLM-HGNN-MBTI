@@ -1,9 +1,32 @@
-import os
 import pickle
 import torch
 import dhg
 import ast
 import logging
+
+
+class HyperedgeData:
+    def __init__(self, data, df):
+        self.data = get_hyperedges(data, df)
+        self.x = data.x
+        self.y = data.y
+        self.hg = data.hg
+
+        logging.info(
+            f"Structured hypergraph with {self.hg.num_e} hyperedges, {self.x.size(0)} nodes"
+        )
+
+    def save_hyperedges(self, hyperedges_file="hyperedges.pkl"):
+        with open(hyperedges_file, "wb") as f:
+            pickle.dump(self, f)
+        logging.info(f"Hyperedges and features saved to {hyperedges_file}")
+
+    @staticmethod
+    def load_hyperedges(hyperedges_file="hyperedges.pkl"):
+        with open(hyperedges_file, "rb") as f:
+            obj = pickle.load(f) 
+        logging.info(f"Hyperedges and features loaded from {hyperedges_file}")
+        return obj
 
 # Define the self-loop removal function
 def remove_self_loops(edge_index: torch.Tensor) -> torch.Tensor:
@@ -14,32 +37,29 @@ def remove_self_loops(edge_index: torch.Tensor) -> torch.Tensor:
 device = torch.device("cuda" if torch.cuda else "cpu")
 
 
-def get_dhg_hyperedges(data, df, cache_dir="cache", hyperedges_file="hyperedges.pkl"):
+def get_hyperedges(data, df):
     if not torch.isfinite(data.x).all():
-        logging.debug("Non-finite values found in data.x, applying fill strategy...")
         data.x[~torch.isfinite(data.x)] = 0
 
     # Define the hyperedges based on data
     edge_index = data.edge_index
     edge_index_no_self_loops = remove_self_loops(edge_index)
-    logging.debug("Edge index shape:", edge_index_no_self_loops.shape)
 
     # Create a graph from the edge index
     _g = dhg.Graph(
         data.x.size(0), edge_index_no_self_loops.t().tolist(), merge_op="mean"
     )
-    logging.debug("Graph:", _g)
 
     # Add nodes into the hypergraph
     hg = dhg.Hypergraph(data.x.size(0))
-    
+
     # Add hyperedges into the hypergraph
     hg.add_hyperedges_from_graph_kHop(_g, k=2, only_kHop=False, group_name="kHop")
 
     # Clustering-based hyperedges
     k = 100
     hg.add_hyperedges_from_feature_kNN(data.x, k, group_name="feature_kNN")
-    
+
     # Group-based hyperedges
     user_to_index = {username: i for i, username in enumerate(df["Username"])}
 
@@ -79,15 +99,5 @@ def get_dhg_hyperedges(data, df, cache_dir="cache", hyperedges_file="hyperedges.
         hg.add_hyperedges(nodes, group_name=group_id)
 
     data.hg = hg
-
-    # Ensure the cache directory exists
-    os.makedirs(cache_dir, exist_ok=True)
-
-    # Save the hyperedges to a file
-    hyperedges_path = os.path.join(cache_dir, hyperedges_file)
-    with open(hyperedges_path, "wb") as f:
-        pickle.dump({"hypergraph": hg, "x": data.x, "y": data.y}, f)
-
-    logging.debug(f"Hyperedges and features saved to {hyperedges_path}")
 
     return data

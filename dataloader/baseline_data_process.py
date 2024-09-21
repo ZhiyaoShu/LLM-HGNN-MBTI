@@ -10,7 +10,7 @@ import pickle
 import logging
 
 def load_onehot_data():
-    df = pd.read_csv('dataset/updated_merge_new_df.csv', encoding='utf-8')
+    df = pd.read_csv('dataset/users_data_small.csv', encoding='utf-8')
 
     return df
 
