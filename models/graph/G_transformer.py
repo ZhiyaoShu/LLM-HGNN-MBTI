@@ -2,6 +2,14 @@ import torch
 import torch.nn.functional as F
 from torch_geometric.nn import GCNConv
 import pickle
+import os
+import parse_arg
+from dataloader import baseline_data_process
+
+args = parse_arg.parse_arguments()
+
+data_path = "data_features.pkl"
+
 
 class GraphTransformer(torch.nn.Module):
     def __init__(self, features, classes, hidden):
@@ -19,11 +27,12 @@ class GraphTransformer(torch.nn.Module):
 
         return F.log_softmax(x, dim=1)
 
-def GCNCT():
-    data = pickle.load(open('baseline_data.pkl', 'rb'))
-    model = GraphTransformer(features=data.x.shape[1], hidden=200, classes=16)
-    
-    return model, data
 
-if __name__ == "__main__":
-    GCNCT()
+def GTRANS():
+    if not os.path.exists(data_path):
+        baseline_data_process()
+    else:
+        data = pickle.load(open(data_path, "rb"))
+    model = GraphTransformer(features=data.x.shape[1], hidden=200, classes=16)
+
+    return model, data

@@ -10,7 +10,7 @@ def parse_arguments():
         "--model",
         type=str,
         default="hgnn",
-        help="The model to use. Can be hgnn, hgnnp, gcn, gat, gtransformer. Default is hgnn.",
+        help="The model to use. Can be hgnn, hgnnp, gcn, gat, gtrans. Default is hgnn.",
     )
 
     parser.add_argument(

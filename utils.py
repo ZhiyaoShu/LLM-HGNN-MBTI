@@ -13,13 +13,6 @@ def seed_setting(seed=42):
     torch.manual_seed(seed)
 
 
-# Weight loss functions
-def weighted_cross_entropy(output, target, weights):
-    tensor_weights = torch.tensor(weights, dtype=torch.float, device=output.device)
-    criterion = nn.CrossEntropyLoss(weight=tensor_weights)
-    return criterion(output, target)
-
-
 weights = [1.0] * 16
 mbti_to_number = {
     "INTJ": 0,
@@ -42,6 +35,13 @@ mbti_to_number = {
 weights[mbti_to_number["INFP"] - 1] = 0.80
 weights[mbti_to_number["INFJ"] - 1] = 0.78
 weights[mbti_to_number["INTP"] - 1] = 0.78
+
+
+# Weight loss functions
+def weighted_cross_entropy(output, target, weights):
+    tensor_weights = torch.tensor(weights, dtype=torch.float, device=output.device)
+    criterion = nn.CrossEntropyLoss(weight=tensor_weights)
+    return criterion(output, target)
 
 
 # Set up ouput directory
@@ -90,6 +90,7 @@ def setup_logging(output_folder, console_level="DEBUG", debug_filename="debug.lo
 # Check if GPU is available
 def gpu_config():
     if torch.cuda.is_available():
+        print(f"CUDA is available. Number of GPUs: {torch.cuda.device_count()}")
         device = torch.device("cuda")
         gpu_numbers = torch.cuda.device_count()
         logging.info(f"Using {gpu_numbers} GPUs")

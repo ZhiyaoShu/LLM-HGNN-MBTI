@@ -28,7 +28,7 @@ We collected totally **85462** users profiles from **[Personality Cafe](https://
 - Sexual orientation
 - Enneagram Type
 
-To speed up, we selected **17000** users with both completed followers, groups, MBTI and Enneagram information to generate natrual-language descriptions. The dataset is stored in [data/users_data_small.csv](dataset/users_data_all.json).
+To speed up, we selected **17000** users with both completed followers, groups, MBTI and Enneagram information to generate natrual-language descriptions. The dataset is stored in [dataset](dataset).
 
 ## Settings
 
@@ -42,28 +42,31 @@ pip install -r requirements.txt
 
 ## test pre-trained models
 
-You can run the test.py to test a pre-trained model with following arguments:
+You can run the test.py to test a pre-trained [hypergraph neural network(HGNN)](https://drive.google.com/file/d/1ZfcH1hOB5tqphYymYNsOyAOK5MLzx8Dl/view?usp=drive_link) with following arguments:
 
 ```python
-python test.py --model_path best_model.pth 
+python test.py --test_model_path best_model_hgnn.pth 
 ```
+You can also test the [hypergraph neural network plus(HGNNP)](https://drive.google.com/file/d/1nNAGFbkd0KIGzh3YmnsdqZV9aeTJAt-C/view?usp=sharing) and change the `test_model_path` to `best_model_hgnnp.pth`
+
+Note that we suppose you download the pre-trained models in the repo root directory.
 
 ## [Training](src/train.py)
 
-To train the model, you need to:
+To train a model, you need to:
 
 **- Natrual-language descriptions and converted embeddings.**
 
 As many new LLMs emerged after we publish, you can either generate new features with SOTAs with row data, or run with the existed generated descriptions features from the GPT-3.5-turbo, converted by sentence-transformers. You can download the descriptions and features from [dataset](dataset):
 
-- [Gpt-3.5-generated description](dataset/gpt_description.json)
+- [Generated descriptions](dataset/gpt_description.json)
 
 - [Converted embeddings](dataset/embeddings.json)
 
-- You can also downloaded [processed feature maps], which has aggregated features and 
+- You can also downloaded [processed feature maps](https://drive.google.com/file/d/1RGQcZhEYZd0ScliGSAB077myJlosKMQe/view?usp=sharing), which has aggregated user inforamtion and descriptions. 
 
 **- Three types hyperedges.**
-You can download existed hyperedges [here](https://drive.google.com/file/d/1ILBRv44OYk8f-sSix23aU_ntHDvrif1E/view?usp=drive_link)
+You can download structured hyperedges [here](https://drive.google.com/file/d/1ILBRv44OYk8f-sSix23aU_ntHDvrif1E/view?usp=drive_link)
 
 After you prepare previous steps, you can start training the model with the following arguments:
 
@@ -71,14 +74,19 @@ After you prepare previous steps, you can start training the model with the foll
 python train.py
 ```
 
-Check the [parser arguments](parse_arg.py) to adjust output path, models, epoches and other parameters.
+Check the [parser arguments](parse_arg.py) to adjust output path, model types, epoches and other parameters.
 
-## Contribution & Collaboration
+## Contribution & Collaborations
 
-Zhiyao Shu
-
-(DHG) [https://deephypergraph.readthedocs.io/en/latest/index.html]
-(OPENAI API) [https://beta.openai.com/docs/]
-(LLAMA)[]
-(Google Gemma)
 We encourage the community to contribute to this project. Feel free to send us feedback, suggest improvements, or submit pull requests with your innovative ideas and changes.
+
+[Zhiyao Shu](https://github.com/ZhiyaoShu)
+[Xiangguo Sun](https://github.com/sheldonresearch)
+
+## References
+
+[DHG](https://deephypergraph.readthedocs.io/en/latest/index.html)
+[OPENAI API](https://platform.openai.com/docs/models/gpt-3-5-turbo)
+[LLAMA](https://huggingface.co/meta-llama/Llama-2-7b)
+[Google Gemma](https://huggingface.co/google/gemma-7b)
+

@@ -3,8 +3,6 @@ import torch
 from sklearn.metrics import f1_score, accuracy_score
 import torchmetrics
 from utils import seed_setting
-import logging
-
 
 # Random guess
 def random_guess_baseline(y_true):

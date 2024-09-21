@@ -5,9 +5,8 @@ import logging
 import copy
 from focal_loss.focal_loss import FocalLoss
 from datetime import datetime
-import sys
 from tqdm import tqdm
-
+import os
 import parse_arg
 from utils import (
     seed_setting,
@@ -30,20 +29,24 @@ logging.info(f"Arguments: {args}")
 logging.info(f"The training outputs are being saved in {output_folder}/info.log")
 
 
-def train(model, data, optimizer, model_type):
+def train(model, data, optimizer, model_type, device):
     model.train()
     optimizer.zero_grad()
 
     # Get the hypergraph output
     if model_type in ["hgnn", "hgnnp"]:
         out = model(data.node_features, data.hg)
-        out_logits = out[data.train_mask]
-        logits_shifted = out_logits - out_logits.max(dim=1, keepdim=True).values
+        data.hg = data.hg.to(device)
+    else:
+        out = model(data)
 
+    out_logits = out[data.train_mask]
+    logits_shifted = out_logits - out_logits.max(dim=1, keepdim=True).values
     # Get target labels for the training set
     target = data.y[data.train_mask].squeeze().long()
     if target.dim() == 2 and target.shape[1] == 1:
         target = target.squeeze(1)
+
     probabilities = F.softmax(logits_shifted, dim=1)
     probabilities = torch.clamp(probabilities, min=0, max=1)
     if torch.any(torch.isnan(probabilities)):
@@ -66,10 +69,21 @@ def train(model, data, optimizer, model_type):
 
 
 # Validation loop
-def validate(model, data):
+def validate(model, model_type, data, device):
     model.eval()
+
+    # Move data to the correct device
+    data.node_features = data.node_features.to(device)
+    data.y = data.y.to(device)
+    data.val_mask = data.val_mask.to(device)
+
     with torch.no_grad():
-        out = model(data.node_features, data.hg)
+        if model_type in ["hgnn", "hgnnp"]:
+            data.hg = data.hg.to(device)
+            out = model(data.node_features, data.hg)
+        else:
+            out = model(data)
+
         target = data.y[data.val_mask].squeeze()
         target = target.long()
         val_loss = weighted_cross_entropy(out[data.val_mask], target, weights)
@@ -79,43 +93,56 @@ def validate(model, data):
 def main():
     seed_setting()
 
-    device=gpu_config()
+    device = gpu_config()
 
     best_val_loss = float("inf")
     best_model_state = None
 
     # Initialize model, optimizer, scheduler
     model, data = get_models(args.model)
+
+    # Move data to the correct device
     model = model.to(device)
+    data = data.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
     scheduler = ReduceLROnPlateau(optimizer, mode="min", factor=0.1, patience=10)
 
-    # Iterate and output the best model
-    for epoch in tqdm(range(args.epochs), desc="Training Progress"):
-        train_loss = train(model, data, optimizer, args.model, device)
-        val_loss = validate(model, data, device)
-        scheduler.step(val_loss)
-
+    if os.path.exists(f"{args.save_dir}/best_model_{args.model}.pth"):
         logging.info(
-            f"Epoch {epoch}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}"
+            f"Best model already exists, loading from {args.save_dir}/best_model_{args.model}.pth"
         )
+        best_model_state = torch.load(f"{args.save_dir}/best_model_{args.model}.pth")
+        model.load_state_dict(best_model_state)
+    else:
+        # Iterate and output the best model
+        for epoch in tqdm(range(args.epochs), desc="Training Progress"):
+            train_loss = train(model, data, optimizer, args.model, device)
+            val_loss = validate(model, args.model, data, device)
+            scheduler.step(val_loss)
 
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            best_model_state = copy.deepcopy(model.state_dict())
+            logging.info(
+                f"Epoch {epoch}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}"
+            )
 
-    # Save the best model
-    torch.save(best_model_state, f"{output_folder}/best_model_{time}.pth")
-    logging.info(f"Best model saved to {output_folder}/best_model_{time}.pth")
-    model.load_state_dict(best_model_state)
-    
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                best_model_state = copy.deepcopy(model.state_dict())
+
+        # Save the best model
+        torch.save(best_model_state, f"{args.save_dir}/best_model_{args.model}.pth")
+        logging.info(f"Best model saved to {args.save_dir}/best_model_{args.model}.pth")
+        model.load_state_dict(best_model_state)
+        model = model.to(device)
+
+    # Test the best model
+    test_acc, test_f1, micro_f1, auc_score = test(
+        model, args.model, data, model_path=best_model_state
+    )
+
     # Back to CPU after training
     model = model.to("cpu")
     torch.cuda.empty_cache()
-
-    # Test the best model
-    test_acc, test_f1, micro_f1, auc_score = test(model, data)
 
     return test_acc, test_f1, micro_f1, auc_score
 

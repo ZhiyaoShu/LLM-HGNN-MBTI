@@ -23,31 +23,41 @@ logging.info(f"Arguments: {args}")
 logging.info(f"The testing outputs are being saved in {output_folder}")
 
 
-def test(model=None, data=None, model_path=None):
+def test(model, model_type, data, model_path):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     # Load best model if not provided
-    if model_path:
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    if model_path and isinstance(model_path, str):
         if model is None or data is None:
-            model, data = get_models(
-                args.model
-            )  # Initialize model and data if not provided
+            model, data = get_models(args.model)
         model.load_state_dict(torch.load(model_path))
-    else:
-        logging.error("Model path is not provided.")
-        return
+    elif isinstance(model_path, dict):
+        model.load_state_dict(model_path)
+
+    model = model.to(device)
+
+    data.node_features = data.node_features.to(device)
+    if model_type in ["hgnn", "hgnnp"]:
+        data.hg = data.hg.to(device)
 
     # Test the model
     model.eval()
 
     with torch.no_grad():
-        out = model(data.node_features, data.hg)
+        if model_type in ["hgnn", "hgnnp"]:
+            out = model(data.node_features, data.hg)
+        else:
+            out = model(data)
         pred = torch.softmax(out, dim=1)
         logging.info(f"Shape and dim of pred: {pred.shape}, {pred.dim()}")
 
-    target = data.y[data.test_mask].squeeze()
+    target = data.y[data.test_mask].squeeze().long().to(device)
     target = target.long()
     logging.info(f"Shape and dim of target: {target.shape}, {target.dim()}")
 
-    y_true = target.numpy()
+    y_true = target.cpu().numpy()
     y_pred_probs = pred[data.test_mask].cpu().numpy()
 
     y_pred = []
@@ -56,7 +66,7 @@ def test(model=None, data=None, model_path=None):
     y_true_flat = y_true.ravel()
     y_pred_flat = torch.tensor(y_pred).numpy().ravel()
 
-    auroc = torchmetrics.AUROC(num_classes=16, task="multiclass")
+    auroc = torchmetrics.AUROC(num_classes=16, task="multiclass").to(device)
     auc_score = auroc(pred[data.test_mask], target)
     auc_score = auroc.compute()
 
@@ -77,15 +87,18 @@ def test(model=None, data=None, model_path=None):
     )
 
     logging.info(
-        f'''Test Accuracy: {test_acc:.4f}, 
+        f"""Test Accuracy: {test_acc:.4f}, 
                 Test F1 Score (Macro): {test_f1:.4f}, 
                 Test Micro F1 Score: {micro_f1:.4f}, 
-                Test AUC Score: {auc_score:.4f}'''
+                Test AUC Score: {auc_score:.4f}"""
     )
+
+    model = model.to("cpu")
+    torch.cuda.empty_cache()
 
     return test_acc, test_f1, micro_f1, auc_score
 
 
-if __name__ == "__main__":
-    args = parse_arg.parse_arguments()
-    test(model_path=args.test_model_path)
+# if __name__ == "__main__":
+#     args = parse_arg.parse_arguments()
+#     test(model_path=args.test_model_path)
