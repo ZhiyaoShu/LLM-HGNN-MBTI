@@ -26,20 +26,18 @@ output_folder = f"{args.save_dir}/{time}"
 setup_logging(output_folder, console_level="info", debug_filename="info.log")
 # logging.info(" ".join(sys.argv))
 logging.info(f"Arguments: {args}")
-logging.info(f"The training outputs are being saved in {output_folder}/info.log")
+logging.info(f"The outputs are being saved in {output_folder}/info.log")
 
 
 def train(model, data, optimizer, model_type, device):
     model.train()
     optimizer.zero_grad()
 
-    data.node_features = data.node_features.to(device)
-    data.y = data.y.to(device)
     data.train_mask = data.train_mask.to(device)
 
     # Get the hypergraph output
     if model_type in ["hgnn", "hgnnp"]:
-        out = model(data.node_features, data.hg)
+        out = model(data.x, data.hg)
         data.hg = data.hg.to(device)
     else:
         out = model(data)
@@ -75,14 +73,12 @@ def train(model, data, optimizer, model_type, device):
 # Validation loop
 def validate(model, model_type, data, device):
     model.eval()
-    
-    data.node_features = data.node_features.to(device)
-    data.y = data.y.to(device)
-    data.train_mask = data.train_mask.to(device)
+
+    data.val_mask = data.val_mask.to(device)
 
     with torch.no_grad():
         if model_type in ["hgnn", "hgnnp"]:
-            out = model(data.node_features, data.hg)
+            out = model(data.x, data.hg)
         else:
             out = model(data)
 
@@ -96,30 +92,40 @@ def main():
     seed_setting()
 
     device = gpu_config()
-    model, data = get_models(args.model)
+    val_model_best_path = f"{args.val_model_path}"
+    save_dir_best_path = f"{args.save_dir}/best_model_{args.model}.pth"
 
-    model = model.to(device)
-    data.node_features = data.node_features.to(device)
-    data.y = data.y.to(device)
-    data.train_mask = data.train_mask.to(device)
-    data.val_mask = data.val_mask.to(device)
-    if hasattr(data, 'hg'):
-        data.hg = data.hg.to(device)
-
-    best_val_loss = float("inf")
-    best_model_state = None
-
-    # Initialize model, optimizer, scheduler
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
-    scheduler = ReduceLROnPlateau(optimizer, mode="min", factor=0.1, patience=10)
-
-    if os.path.exists(f"{args.save_dir}/best_model_{args.model}.pth"):
-        logging.info(
-            f"Best model already exists, loading from {args.save_dir}/best_model_{args.model}.pth"
-        )
-        best_model_state = torch.load(f"{args.save_dir}/best_model_{args.model}.pth")
+    # Check if the model exists in the val_model_path
+    if os.path.exists(val_model_best_path):
+        model_path = val_model_best_path
+        logging.info(f"Loading pre-trained model from {model_path}")
+        best_model_state = torch.load(model_path)
+        model, data = get_models(args.model)
+        model.load_state_dict(best_model_state)
+    # Check if the model exists in the save_dir
+    elif os.path.exists(save_dir_best_path):
+        model_path = save_dir_best_path
+        logging.info(f"Loading pre-trained model from {model_path}")
+        best_model_state = torch.load(model_path)
+        model, data = get_models(args.model)
         model.load_state_dict(best_model_state)
     else:
+        logging.info("No pre-trained model found, initializing a new model.")
+        model, data = get_models(args.model)
+    
+        model = model.to(device)
+        data.x = data.x.to(device)
+        data.y = data.y.to(device)
+        if hasattr(data, 'hg'):
+            data.hg = data.hg.to(device)
+
+        best_val_loss = float("inf")
+        best_model_state = None
+
+        # Initialize model, optimizer, scheduler
+        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
+        scheduler = ReduceLROnPlateau(optimizer, mode="min", factor=0.1, patience=10)
+
         # Iterate and output the best model
         for epoch in tqdm(range(args.epochs), desc="Training Progress"):
             train_loss = train(model, data, optimizer, args.model, device)

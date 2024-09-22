@@ -18,7 +18,7 @@ output_folder = f"{args.save_dir}/{time}"
 
 def test(model, model_type, data, model_path):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model_path = args.test_model_path
+    model_path = args.val_model_path
     
     # Load best model if not provided
     if model_path and isinstance(model_path, str):

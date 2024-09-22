@@ -1,32 +1,10 @@
+import os
 import pickle
 import torch
 import dhg
 import ast
 import logging
 
-
-class HyperedgeData:
-    def __init__(self, data, df):
-        self.data = get_hyperedges(data, df)
-        self.x = data.x
-        self.y = data.y
-        self.hg = data.hg
-
-        logging.info(
-            f"Structured hypergraph with {self.hg.num_e} hyperedges, {self.x.size(0)} nodes"
-        )
-
-    def save_hyperedges(self, hyperedges_file="hyperedges.pkl"):
-        with open(hyperedges_file, "wb") as f:
-            pickle.dump(self, f)
-        logging.info(f"Hyperedges and features saved to {hyperedges_file}")
-
-    @staticmethod
-    def load_hyperedges(hyperedges_file="hyperedges.pkl"):
-        with open(hyperedges_file, "rb") as f:
-            obj = pickle.load(f) 
-        logging.info(f"Hyperedges and features loaded from {hyperedges_file}")
-        return obj
 
 # Define the self-loop removal function
 def remove_self_loops(edge_index: torch.Tensor) -> torch.Tensor:
@@ -37,7 +15,7 @@ def remove_self_loops(edge_index: torch.Tensor) -> torch.Tensor:
 device = torch.device("cuda" if torch.cuda else "cpu")
 
 
-def get_hyperedges(data, df):
+def get_dhg_hyperedges(data, df, hyperedges_file="hyperedges.pkl"):
     if not torch.isfinite(data.x).all():
         data.x[~torch.isfinite(data.x)] = 0
 
@@ -99,5 +77,11 @@ def get_hyperedges(data, df):
         hg.add_hyperedges(nodes, group_name=group_id)
 
     data.hg = hg
+
+    # Save the hyperedges to a file
+    with open(hyperedges_file, "wb") as f:
+        pickle.dump({"hg": hg, "x": data.x, "y": data.y}, f)
+
+    logging.debug(f"Hyperedges and features saved to {hyperedges_file}")
 
     return data

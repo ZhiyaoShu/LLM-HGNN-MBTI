@@ -45,7 +45,7 @@ pip install -r requirements.txt
 You can run the test.py to test a pre-trained [hypergraph neural network(HGNN)](https://drive.google.com/file/d/1ZfcH1hOB5tqphYymYNsOyAOK5MLzx8Dl/view?usp=drive_link) with following arguments:
 
 ```python
-python test.py --test_model_path best_model_hgnn.pth 
+python train.py --test_model_path best_model_hgnn.pth 
 ```
 You can also test the [hypergraph neural network plus(HGNNP)](https://drive.google.com/file/d/1nNAGFbkd0KIGzh3YmnsdqZV9aeTJAt-C/view?usp=sharing) and change the `test_model_path` to `best_model_hgnnp.pth`
 
