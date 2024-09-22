@@ -33,12 +33,16 @@ def train(model, data, optimizer, model_type, device):
     model.train()
     optimizer.zero_grad()
 
+    model = model.to(device)
+    data.x = data.x.to(device)
+    data.y = data.y.to(device)
     data.train_mask = data.train_mask.to(device)
+    data.node_features = data.node_features.to(device)
 
     # Get the hypergraph output
     if model_type in ["hgnn", "hgnnp"]:
-        out = model(data.x, data.hg)
         data.hg = data.hg.to(device)
+        out = model(data.node_features, data.hg)
     else:
         out = model(data)
 
@@ -74,7 +78,10 @@ def train(model, data, optimizer, model_type, device):
 def validate(model, model_type, data, device):
     model.eval()
 
+    data.x = data.x.to(device)
+    data.y = data.y.to(device)
     data.val_mask = data.val_mask.to(device)
+    data.node_features = data.node_features.to(device)
 
     with torch.no_grad():
         if model_type in ["hgnn", "hgnnp"]:
@@ -95,19 +102,26 @@ def main():
     val_model_best_path = f"{args.val_model_path}"
     save_dir_best_path = f"{args.save_dir}/best_model_{args.model}.pth"
 
-    # Check if the model exists in the val_model_path
-    if os.path.exists(val_model_best_path):
-        model_path = val_model_best_path
-        logging.info(f"Loading pre-trained model from {model_path}")
-        best_model_state = torch.load(model_path)
-        model, data = get_models(args.model)
-        model.load_state_dict(best_model_state)
-    # Check if the model exists in the save_dir
-    elif os.path.exists(save_dir_best_path):
-        model_path = save_dir_best_path
-        logging.info(f"Loading pre-trained model from {model_path}")
-        best_model_state = torch.load(model_path)
-        model, data = get_models(args.model)
+    best_val_loss = float("inf")
+    best_model_state = None
+
+    # Initialize model, optimizer, scheduler
+    model, data = get_models(args.model)
+
+    # Move data to the correct device
+    model = model.to(device)
+    data.x = data.x.to(device)
+    data.y = data.y.to(device)
+    data.node_features = data.node_features.to(device)
+
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
+    scheduler = ReduceLROnPlateau(optimizer, mode="min", factor=0.1, patience=10)
+
+    if os.path.exists(f"{args.save_dir}/best_model_{args.model}.pth"):
+        logging.info(
+            f"Best model already exists, loading from {args.save_dir}/best_model_{args.model}.pth"
+        )
+        best_model_state = torch.load(f"{args.save_dir}/best_model_{args.model}.pth")
         model.load_state_dict(best_model_state)
     else:
         logging.info("No pre-trained model found, initializing a new model.")
