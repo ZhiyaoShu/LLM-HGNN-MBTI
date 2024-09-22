@@ -8,7 +8,7 @@ import os
 
 args = parse_arg.parse_arguments()
 
-if args.llm:
+if args.use_llm:
     data_path = "data_features.pkl"
 else:
     data_path = "baseline_data.pkl"

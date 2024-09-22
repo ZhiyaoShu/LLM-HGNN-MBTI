@@ -33,10 +33,16 @@ def train(model, data, optimizer, model_type, device):
     model.train()
     optimizer.zero_grad()
 
+    model = model.to(device)
+    data.x = data.x.to(device)
+    data.y = data.y.to(device)
+    data.train_mask = data.train_mask.to(device)
+    data.node_features = data.node_features.to(device)
+
     # Get the hypergraph output
     if model_type in ["hgnn", "hgnnp"]:
-        out = model(data.node_features, data.hg)
         data.hg = data.hg.to(device)
+        out = model(data.node_features, data.hg)
     else:
         out = model(data)
 
@@ -72,10 +78,10 @@ def train(model, data, optimizer, model_type, device):
 def validate(model, model_type, data, device):
     model.eval()
 
-    # Move data to the correct device
-    data.node_features = data.node_features.to(device)
+    data.x = data.x.to(device)
     data.y = data.y.to(device)
     data.val_mask = data.val_mask.to(device)
+    data.node_features = data.node_features.to(device)
 
     with torch.no_grad():
         if model_type in ["hgnn", "hgnnp"]:
@@ -103,7 +109,9 @@ def main():
 
     # Move data to the correct device
     model = model.to(device)
-    data = data.to(device)
+    data.x = data.x.to(device)
+    data.y = data.y.to(device)
+    data.node_features = data.node_features.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
     scheduler = ReduceLROnPlateau(optimizer, mode="min", factor=0.1, patience=10)
