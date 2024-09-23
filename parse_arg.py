@@ -67,7 +67,7 @@ def parse_arguments():
     )
 
     parser.add_argument(
-        "--test_model_path",
+        "--val_model_path",
         type=str,
         default=None,
         help="Path to the model to test directly. Default is None.",

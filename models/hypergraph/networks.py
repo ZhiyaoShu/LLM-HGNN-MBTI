@@ -10,28 +10,47 @@ import parse_arg
 
 args = parse_arg.parse_arguments()
 
-data_path = "data_features.pkl"
-hyperedge_path = "cache/hyperedges.pkl"
+if args.use_llm:
+    data_path = "data_features.pkl"
+else:
+    data_path = "baseline_data.pkl"
+
+hyperedge_path = "hyperedges.pkl"
+
+
+class DataObject:
+    def __init__(self, data_dict):
+        self.__dict__.update(data_dict)
 
 
 def HGNFrame():
     if not os.path.exists(data_path):
+        logging.info("Data file not found. Preparing data...")
         data_preparation()
     else:
-        data = pickle.load(open("data_features.pkl", "rb"))
+        logging.info("Data file found. Loading data...")
+        data = pickle.load(open(data_path, "rb"))
     df, _ = data_preparation.load_data()
 
     if not os.path.exists(hyperedge_path):
+        logging.info(f"Hyperedges not found. Preparing hyperedges...")
         data = get_dhg_hyperedges(data, df)
     else:
-        data = pickle.load(open(hyperedge_path, "rb"))
-    logging.debug(f"Input data type: {type(data)}")
-    logging.debug(f"Attributes of data: {dir(data)}")
+        logging.info(f"Loading hyperedges from {hyperedge_path}")
+        hyperedge_data = pickle.load(open(hyperedge_path, "rb"))
+
+        for key, value in hyperedge_data.items():
+            if key in data:
+                logging.warning(
+                    f"Attribute '{key}' already exists in data. It will not be overwritten."
+                )
+            else:
+                data[key] = value
+    data = DataObject(data)
 
     data = normalize_features(data)
-    node_features = data.x
     model = HGNN(
-        in_channels=node_features.shape[1],
+        in_channels=data.x.shape[1],
         hid_channels=300,
         num_classes=16,
         use_bn=True,
@@ -41,24 +60,32 @@ def HGNFrame():
 
 def HGNPFrame():
     if not os.path.exists(data_path):
-        logging.debug("Data file not found. Preparing data...")
+        logging.info("Data file not found. Preparing data...")
         data_preparation()
     else:
-        logging.debug("Data file found. Loading data...")
-        data = pickle.load(open("data_features.pkl", "rb"))
+        logging.info("Data file found. Loading data...")
+        data = pickle.load(open(data_path, "rb"))
     df, _ = data_preparation.load_data()
+
     if not os.path.exists(hyperedge_path):
-        logging.debug("Hyperedge file not found. Preparing hyperedges...")
+        logging.info(f"Hyperedges not found. Preparing hyperedges...")
         data = get_dhg_hyperedges(data, df)
     else:
-        logging.debug("Hyperedge file found. Loading hyperedges...")
-        data = pickle.load(open(hyperedge_path, "rb"))
-    logging.debug(f"Data type: {type(data)}")
-    logging.debug(f"Attributes of data: {dir(data)}")
+        logging.info(f"Loading hyperedges from {hyperedge_path}")
+        hyperedge_data = pickle.load(open(hyperedge_path, "rb"))
+
+        for key, value in hyperedge_data.items():  
+            if key in data:
+                logging.warning(
+                    f"Attribute '{key}' already exists in data. It will not be overwritten."
+                )
+            else:
+                data[key] = value
+    data = DataObject(data)
+
     data = normalize_features(data)
-    node_features = data.x
     model = HGNNP(
-        in_channels=node_features.shape[1],
+        in_channels=data.x.shape[1],
         hid_channels=300,
         num_classes=16,
         use_bn=True,

@@ -100,29 +100,29 @@ def main():
     seed_setting()
 
     device = gpu_config()
-
-    best_val_loss = float("inf")
-    best_model_state = None
-
-    # Initialize model, optimizer, scheduler
     model, data = get_models(args.model)
 
-    # Move data to the correct device
-    model = model.to(device)
-    data.x = data.x.to(device)
-    data.y = data.y.to(device)
-    data.node_features = data.node_features.to(device)
+    if os.path.exists(f"{args.val_model_path}"):
+        logging.info(f"Best model already exists, loading from {args.val_model_path}")
+        # Initialize model, optimizer, scheduler
+        model = torch.load(f"{args.val_model_path}")
+        model = model.to(device)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
-    scheduler = ReduceLROnPlateau(optimizer, mode="min", factor=0.1, patience=10)
-
-    if os.path.exists(f"{args.save_dir}/best_model_{args.model}.pth"):
-        logging.info(
-            f"Best model already exists, loading from {args.save_dir}/best_model_{args.model}.pth"
-        )
-        best_model_state = torch.load(f"{args.save_dir}/best_model_{args.model}.pth")
-        model.load_state_dict(best_model_state)
     else:
+        best_val_loss = float("inf")
+        best_model_state = None
+
+        # Initialize model, optimizer, scheduler
+        model, data = get_models(args.model)
+
+        # Move data to the correct device
+        model = model.to(device)
+        data.x = data.x.to(device)
+        data.y = data.y.to(device)
+        data.node_features = data.node_features.to(device)
+
+        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=5e-4)
+        scheduler = ReduceLROnPlateau(optimizer, mode="min", factor=0.1, patience=10)
         # Iterate and output the best model
         for epoch in tqdm(range(args.epochs), desc="Training Progress"):
             train_loss = train(model, data, optimizer, args.model, device)
@@ -138,15 +138,12 @@ def main():
                 best_model_state = copy.deepcopy(model.state_dict())
 
         # Save the best model
-        torch.save(best_model_state, f"{args.save_dir}/best_model_{args.model}.pth")
-        logging.info(f"Best model saved to {args.save_dir}/best_model_{args.model}.pth")
+        torch.save(model, f"{args.save_dir}/best_model_{args.model}.pkl")
+        logging.info(f"Best model saved to {args.save_dir}/best_model_{args.model}.pkl")
         model.load_state_dict(best_model_state)
-        model = model.to(device)
 
     # Test the best model
-    test_acc, test_f1, micro_f1, auc_score = test(
-        model, args.model, data, model_path=best_model_state
-    )
+    test_acc, test_f1, micro_f1, auc_score = test(model, args.model, data)
 
     # Back to CPU after training
     model = model.to("cpu")

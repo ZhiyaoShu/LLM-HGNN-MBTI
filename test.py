@@ -23,18 +23,11 @@ logging.info(f"Arguments: {args}")
 logging.info(f"The testing outputs are being saved in {output_folder}")
 
 
-def test(model, model_type, data, model_path):
+def test(model, model_type, data):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Load best model if not provided
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    if model_path and isinstance(model_path, str):
-        if model is None or data is None:
-            model, data = get_models(args.model)
-        model.load_state_dict(torch.load(model_path))
-    elif isinstance(model_path, dict):
-        model.load_state_dict(model_path)
 
     model = model.to(device)
 
