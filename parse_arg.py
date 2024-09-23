@@ -54,7 +54,7 @@ def parse_arguments():
 
     parser.add_argument(
         "--mbti",
-        type=bool,
+        type=lambda x: x.lower() == "true",
         default=True,
         help="Use MBTI labels or Enneagram(False). Default is True.",
     )

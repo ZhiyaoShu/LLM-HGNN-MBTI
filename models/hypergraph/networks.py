@@ -2,7 +2,7 @@ from models.hypergraph.hgnn import HGNN
 from models.hypergraph.hgnnp import HGNNP
 from models.hypergraph.hyperedges import get_dhg_hyperedges
 from models.network_utils import normalize_features
-from dataloader import data_preparation
+from dataloader import data_preparation, baseline_data_process
 import pickle
 import os
 import logging
@@ -26,7 +26,10 @@ class DataObject:
 def HGNFrame():
     if not os.path.exists(data_path):
         logging.info("Data file not found. Preparing data...")
-        data_preparation()
+        if args.use_llm:
+            data = data_preparation.process()
+        else:
+            data = baseline_data_process.process()
     else:
         logging.info("Data file found. Loading data...")
         data = pickle.load(open(data_path, "rb"))
@@ -61,7 +64,10 @@ def HGNFrame():
 def HGNPFrame():
     if not os.path.exists(data_path):
         logging.info("Data file not found. Preparing data...")
-        data_preparation()
+        if args.use_llm:
+            data = data_preparation.process()
+        else:
+            data = baseline_data_process.process()
     else:
         logging.info("Data file found. Loading data...")
         data = pickle.load(open(data_path, "rb"))

@@ -42,12 +42,12 @@ pip install -r requirements.txt
 
 ## test pre-trained models
 
-You can run the test.py to test a pre-trained [hypergraph neural network(HGNN)](https://drive.google.com/file/d/1ZfcH1hOB5tqphYymYNsOyAOK5MLzx8Dl/view?usp=drive_link) with following arguments:
+You can run the test.py to test a pre-trained [hypergraph neural network(HGNN)](https://drive.google.com/file/d/1_pG3mhSJ4cVoS1zxqi2nBbpixneXjoMj/view?usp=sharing) with following arguments:
 
 ```python
-python test.py --test_model_path best_model_hgnn.pth 
+python train.py --val_model_path path/to/best_model_hgnn.pth 
 ```
-You can also test the [hypergraph neural network plus(HGNNP)](https://drive.google.com/file/d/1nNAGFbkd0KIGzh3YmnsdqZV9aeTJAt-C/view?usp=sharing) and change the `test_model_path` to `best_model_hgnnp.pth`
+You can also test the [hypergraph neural network plus(HGNNP)](https://drive.google.com/file/d/1eMpQEHX4Ikn5dJ3-cxkRfVGQor5MTmjF/view?usp=sharing) and change the `val_model_path` to `best_model_hgnnp.pth`
 
 Note that we suppose you download the pre-trained models in the repo root directory.
 
@@ -66,7 +66,7 @@ As many new LLMs emerged after we publish, you can either generate new features 
 - You can also downloaded [processed feature maps](https://drive.google.com/file/d/1RGQcZhEYZd0ScliGSAB077myJlosKMQe/view?usp=sharing), which has aggregated user inforamtion and descriptions. 
 
 **- Three types hyperedges.**
-You can download structured hyperedges [here](https://drive.google.com/file/d/1ILBRv44OYk8f-sSix23aU_ntHDvrif1E/view?usp=drive_link)
+You can download structured hyperedges [here](https://drive.google.com/file/d/1Hmrs08KtHEhY6bP-nmLE-2x2PIieR255/view?usp=sharing)
 
 After you prepare previous steps, you can start training the model with the following arguments:
 

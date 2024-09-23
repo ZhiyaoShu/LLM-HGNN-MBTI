@@ -35,9 +35,9 @@ class GAT_Net(torch.nn.Module):
 def GAT():
     if not os.path.exists(data_path):
         if args.use_llm:
-            data = data_preparation()
+            data = data_preparation.process()
         else:
-            data = baseline_data_process()
+            data = baseline_data_process.process()
     else:
         logging.info(f"Loading data from {data_path}")
         data = pickle.load(open(data_path, "rb"))

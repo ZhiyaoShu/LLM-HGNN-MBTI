@@ -130,14 +130,16 @@ def generate_masks(y, split=(2, 1, 1)):
     return train_mask, val_mask, test_mask
 
 
-def process(args):
+def process():
     df, embeddings_df = load_data()
 
     # Determine the type of personality labels to use
     if args.mbti:
         y = y_mbti(df)
+        logging.info("Using MBTI labels")
     else:
         y = y_enngram(df)
+        logging.info("Using Enneagram labels")
 
     combined_df = one_hot_features(df, embeddings_df, args.use_llm)
 
@@ -173,4 +175,4 @@ def process(args):
 
 
 if __name__ == "__main__":
-    process(args)
+    process()

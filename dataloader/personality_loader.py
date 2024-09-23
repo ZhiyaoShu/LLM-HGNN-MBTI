@@ -43,10 +43,9 @@ def y_mbti(df_personality):
 
 # Encode Enneagram types
 enneagram = df_personality["EnneagramType"].unique()
-logging.debug(f"Enneagram types: {enneagram}")
-
 
 def enneagramType(enneagram):
+    logging.info(f"Enneagram types: {enneagram}")
     enneagram_to_number = {
         "Type 1": 0,
         "Type 2": 1,
