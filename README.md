@@ -40,16 +40,14 @@ cd LLM-HGNN-MBTI
 pip install -r requirements.txt
 ```
 
-## test pre-trained models
+## Test pre-trained models
 
-You can run the test.py to test a pre-trained [hypergraph neural network(HGNN)](https://drive.google.com/file/d/1_pG3mhSJ4cVoS1zxqi2nBbpixneXjoMj/view?usp=sharing) with following arguments:
+You can run test a pre-trained [hypergraph neural network(HGNN)](https://drive.google.com/file/d/1_pG3mhSJ4cVoS1zxqi2nBbpixneXjoMj/view?usp=sharing) with following arguments:
 
 ```python
 python train.py --val_model_path path/to/best_model_hgnn.pth 
 ```
 You can also test the [hypergraph neural network plus(HGNNP)](https://drive.google.com/file/d/1eMpQEHX4Ikn5dJ3-cxkRfVGQor5MTmjF/view?usp=sharing) and change the `val_model_path` to `best_model_hgnnp.pth`
-
-Note that we suppose you download the pre-trained models in the repo root directory.
 
 ## [Training](src/train.py)
 
@@ -57,7 +55,7 @@ To train a model, you need to:
 
 **- Natrual-language descriptions and converted embeddings.**
 
-As many new LLMs emerged after we publish, you can either generate new features with SOTAs with row data, or run with the existed generated descriptions features from the GPT-3.5-turbo, converted by sentence-transformers. You can download the descriptions and features from [dataset](dataset):
+As many new LLMs emerged after we published, you can either generate new features with SOTAs, or run with the existed generated descriptions features from the GPT-3.5-turbo, converted by [sentence-transformers](https://sbert.net/). You can download the descriptions and features from [dataset](dataset):
 
 - [Generated descriptions](dataset/gpt_description.json)
 
@@ -71,7 +69,7 @@ You can download structured hyperedges [here](https://drive.google.com/file/d/1H
 After you prepare previous steps, you can start training the model with the following arguments:
 
 ```python
-python train.py
+python train.py --model hgnn
 ```
 
 Check the [parser arguments](parse_arg.py) to adjust output path, model types, epoches and other parameters.
