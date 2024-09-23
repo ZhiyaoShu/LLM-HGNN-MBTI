@@ -90,3 +90,63 @@ We encourage the community to contribute to this project. Feel free to send us f
 [LLAMA](https://huggingface.co/meta-llama/Llama-2-7b)
 [Google Gemma](https://huggingface.co/google/gemma-7b)
 
+
+
+## 🌹Please Cite Our Work If Helpful:
+
+Thanks! / 谢谢! / ありがとう! / merci! / 감사! / Danke! / спасибо! / gracias! ...
+
+```
+@inproceedings{shu2024llm,
+  title={When LLM Meets Hypergraph: A Sociological Analysis on Personality via Online Social Networks},
+  author={Shu, Zhiyao and Sun, Xiangguo and Cheng, Hong},
+  booktitle={Proceedings of the 33th ACM international conference on information \& knowledge management (CIKM)},
+  year={2024}
+}
+```
+
+Works related to this dataset and graph with social personality analysis:
+
+```
+@article{sun2023self,
+  title={Self-supervised hypergraph representation learning for sociological analysis},
+  author={Sun, Xiangguo and Cheng, Hong and Liu, Bo and Li, Jia and Chen, Hongyang and Xu, Guandong and Yin, Hongzhi},
+  journal={IEEE Transactions on Knowledge and Data Engineering},
+  volume={35},
+  number={11},
+  pages={11860--11871},
+  year={2023},
+  publisher={IEEE}
+}
+
+@article{sun2022your,
+  title={In your eyes: Modality disentangling for personality analysis in short video},
+  author={Sun, Xiangguo and Liu, Bo and Ai, Liya and Liu, Danni and Meng, Qing and Cao, Jiuxin},
+  journal={IEEE Transactions on Computational Social Systems},
+  volume={10},
+  number={3},
+  pages={982--993},
+  year={2022},
+  publisher={IEEE}
+}
+
+@article{sun2020group,
+  title={Group-level personality detection based on text generated networks},
+  author={Sun, Xiangguo and Liu, Bo and Meng, Qing and Cao, Jiuxin and Luo, Junzhou and Yin, Hongzhi},
+  journal={World Wide Web},
+  volume={23},
+  pages={1887--1906},
+  year={2020},
+  publisher={Springer}
+}
+
+@inproceedings{sun2018personality,
+  title={Who am I? Personality detection based on deep learning for texts},
+  author={Sun, Xiangguo and Liu, Bo and Cao, Jiuxin and Luo, Junzhou and Shen, Xiaojun},
+  booktitle={2018 IEEE international conference on communications (ICC)},
+  pages={1--6},
+  year={2018},
+  organization={IEEE}
+}
+
+```
