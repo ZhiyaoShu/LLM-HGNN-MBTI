@@ -40,7 +40,7 @@ cd LLM-HGNN-MBTI
 pip install -r requirements.txt
 ```
 
-## test pre-trained models
+## Test pre-trained models
 
 You can run the test.py to test a pre-trained [hypergraph neural network(HGNN)](https://drive.google.com/file/d/1ZfcH1hOB5tqphYymYNsOyAOK5MLzx8Dl/view?usp=drive_link) with following arguments:
 
