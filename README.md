@@ -28,7 +28,7 @@ We collected totally **85462** users profiles from **[Personality Cafe](https://
 - Sexual orientation
 - Enneagram Type
 
-To speed up, we selected **17000** users with both completed followers, groups, MBTI and Enneagram information to generate natrual-language descriptions. The dataset is stored in [dataset](dataset).
+To speed up, we selected **17000** users with both completed followers, groups, MBTI and Enneagram information to generate natrual-language descriptions. The dataset is stored in [HuggingFace](https://huggingface.co/datasets/ZoeyShu/User_Profiles_MBTI/tree/main).
 
 ## Settings
 
